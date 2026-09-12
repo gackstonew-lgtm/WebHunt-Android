@@ -19,10 +19,12 @@ class ProfileRepository(private val api: WebHuntApiService) {
                 _profile.value = data
                 Result.success(data)
             } else {
-                Result.failure(Exception("Failed to fetch profile"))
+                val errorMsg = com.webhunt.app.util.NetworkErrorHandler.getHttpErrorMessage(response, "Failed to fetch profile")
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val msg = com.webhunt.app.util.NetworkErrorHandler.getReadableErrorMessage(e, "Failed to fetch profile")
+            Result.failure(Exception(msg, e))
         }
     }
 
@@ -34,10 +36,12 @@ class ProfileRepository(private val api: WebHuntApiService) {
                 _profile.value = updated
                 Result.success(updated)
             } else {
-                Result.failure(Exception("Failed to update profile"))
+                val errorMsg = com.webhunt.app.util.NetworkErrorHandler.getHttpErrorMessage(response, "Failed to update profile")
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val msg = com.webhunt.app.util.NetworkErrorHandler.getReadableErrorMessage(e, "Failed to update profile")
+            Result.failure(Exception(msg, e))
         }
     }
 }

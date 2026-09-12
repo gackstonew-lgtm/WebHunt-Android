@@ -83,10 +83,12 @@ class PipelineRepository(private val api: WebHuntApiService) {
                 calculateStats(pList, oList)
                 Result.success(Unit)
             } else {
-                Result.failure(Exception("Failed to fetch pipeline"))
+                val errorMsg = com.webhunt.app.util.NetworkErrorHandler.getHttpErrorMessage(response, "Failed to fetch pipeline")
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val msg = com.webhunt.app.util.NetworkErrorHandler.getReadableErrorMessage(e, "Failed to fetch pipeline")
+            Result.failure(Exception(msg, e))
         }
     }
 

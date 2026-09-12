@@ -75,11 +75,12 @@ class SearchRepository(private val api: WebHuntApiService) {
                 )
                 Result.success(parsed)
             } else {
-                val errorMsg = response.body()?.error ?: response.errorBody()?.string() ?: "Search radar failed"
+                val errorMsg = com.webhunt.app.util.NetworkErrorHandler.getHttpErrorMessage(response, "Search radar failed")
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val msg = com.webhunt.app.util.NetworkErrorHandler.getReadableErrorMessage(e, "Search radar failed")
+            Result.failure(Exception(msg, e))
         }
     }
 
@@ -89,10 +90,12 @@ class SearchRepository(private val api: WebHuntApiService) {
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("Failed to load provider statuses"))
+                val errorMsg = com.webhunt.app.util.NetworkErrorHandler.getHttpErrorMessage(response, "Failed to load provider statuses")
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val msg = com.webhunt.app.util.NetworkErrorHandler.getReadableErrorMessage(e, "Failed to load provider statuses")
+            Result.failure(Exception(msg, e))
         }
     }
 }

@@ -19,12 +19,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle2
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.Crown
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.ShieldCheck
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,7 +35,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.webhunt.app.data.model.PaymentPlan
 import com.webhunt.app.ui.theme.WebHuntBlack
 import com.webhunt.app.ui.theme.WebHuntBorder
 import com.webhunt.app.ui.theme.WebHuntBorderSubtle
@@ -90,7 +87,7 @@ fun SubscriptionScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.CheckCircle2,
+                                imageVector = Icons.Default.CheckCircle,
                                 contentDescription = "Active",
                                 tint = WebHuntEmerald,
                                 modifier = Modifier.size(20.dp)
@@ -126,7 +123,7 @@ fun SubscriptionScreen(
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = Icons.Default.Crown, contentDescription = null, tint = WebHuntGold, modifier = Modifier.size(13.dp))
+                        Icon(imageVector = Icons.Default.Stars, contentDescription = null, tint = WebHuntGold, modifier = Modifier.size(13.dp))
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(text = "Lead Radar Access Pass", color = WebHuntMuted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     }
@@ -262,7 +259,7 @@ fun SubscriptionScreen(
                             .border(1.dp, if (isSelected) WebHuntRoyal else WebHuntBorder, RoundedCornerShape(12.dp))
                             .clickable {
                                 // Launch checkout URL via external browser
-                                IntentUtils.openBrowser(context, "https://webhunt.app/subscription?plan=${plan.id}&currency=${state.currency}")
+                                IntentUtils.openBrowser(context, "https://web-hunt-delta.vercel.app/subscription?plan=${plan.id}&currency=${state.currency}")
                             }
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
@@ -291,7 +288,7 @@ fun SubscriptionScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = Icons.Default.ShieldCheck, contentDescription = null, tint = WebHuntEmerald, modifier = Modifier.size(16.dp))
+                    Icon(imageVector = Icons.Default.Security, contentDescription = null, tint = WebHuntEmerald, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(text = "Secure Checkout", color = WebHuntMuted, fontSize = 11.sp)
                 }

@@ -16,11 +16,13 @@
     @retrofit2.http.* <methods>;
 }
 
-# AndroidX Security Crypto
+# AndroidX Security Crypto & Tink
 -keepclassmembers class androidx.security.crypto.** { *; }
+-dontwarn com.google.errorprone.annotations.**
 
 # Coil image loading
 -keep class coil.** { *; }
 
 # Coroutines
 -keepclassmembers class kotlinx.coroutines.** { *; }
+

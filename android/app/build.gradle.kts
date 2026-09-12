@@ -44,7 +44,15 @@ android {
         debug {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000/\"")
+            val localProps = Properties().apply {
+                val propFile = rootProject.file("local.properties")
+                if (propFile.exists()) {
+                    load(FileInputStream(propFile))
+                }
+            }
+            val useLocalBackend = (project.findProperty("useLocalBackend") ?: localProps.getProperty("useLocalBackend") ?: "false").toString().toBoolean()
+            val debugBaseUrl = if (useLocalBackend) "\"http://10.0.2.2:3000/\"" else "\"https://web-hunt-delta.vercel.app/\""
+            buildConfigField("String", "BASE_URL", debugBaseUrl)
             buildConfigField("Boolean", "DEBUG_MODE", "true")
         }
         release {
@@ -58,7 +66,7 @@ android {
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
-            buildConfigField("String", "BASE_URL", "\"https://webhunt.app/\"")
+            buildConfigField("String", "BASE_URL", "\"https://web-hunt-delta.vercel.app/\"")
             buildConfigField("Boolean", "DEBUG_MODE", "false")
         }
     }

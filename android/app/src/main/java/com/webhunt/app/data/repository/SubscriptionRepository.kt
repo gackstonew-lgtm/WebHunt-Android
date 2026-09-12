@@ -24,10 +24,12 @@ class SubscriptionRepository(private val api: WebHuntApiService) {
                 if (body.subscription != null) _subscriptionStatus.value = body.subscription
                 Result.success(Unit)
             } else {
-                Result.failure(Exception("Failed to fetch subscription"))
+                val errorMsg = com.webhunt.app.util.NetworkErrorHandler.getHttpErrorMessage(response, "Failed to fetch subscription")
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val msg = com.webhunt.app.util.NetworkErrorHandler.getReadableErrorMessage(e, "Failed to fetch subscription")
+            Result.failure(Exception(msg, e))
         }
     }
 

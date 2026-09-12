@@ -24,11 +24,12 @@ class AuthRepository(
                 }
                 Result.success(body)
             } else {
-                val errorMsg = response.body()?.error ?: response.errorBody()?.string() ?: "Sign in failed"
+                val errorMsg = com.webhunt.app.util.NetworkErrorHandler.getHttpErrorMessage(response, "Sign in failed")
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val msg = com.webhunt.app.util.NetworkErrorHandler.getReadableErrorMessage(e, "Sign in failed")
+            Result.failure(Exception(msg, e))
         }
     }
 
@@ -42,11 +43,12 @@ class AuthRepository(
                 }
                 Result.success(body)
             } else {
-                val errorMsg = response.body()?.error ?: response.errorBody()?.string() ?: "Registration failed"
+                val errorMsg = com.webhunt.app.util.NetworkErrorHandler.getHttpErrorMessage(response, "Registration failed")
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val msg = com.webhunt.app.util.NetworkErrorHandler.getReadableErrorMessage(e, "Registration failed")
+            Result.failure(Exception(msg, e))
         }
     }
 
@@ -64,10 +66,13 @@ class AuthRepository(
                 Result.success(body)
             } else {
                 sessionManager.clearSession()
-                Result.failure(Exception("Not authenticated"))
+                val errorMsg = com.webhunt.app.util.NetworkErrorHandler.getHttpErrorMessage(response, "Not authenticated")
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            sessionManager.clearSession()
+            val msg = com.webhunt.app.util.NetworkErrorHandler.getReadableErrorMessage(e, "Unable to verify session")
+            Result.failure(Exception(msg, e))
         }
     }
 

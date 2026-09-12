@@ -31,7 +31,9 @@ class TaxonomyRepository(
                 if (body.industries.isNotEmpty()) _industries.value = body.industries
                 if (body.countries.isNotEmpty()) _countries.value = body.countries
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            com.webhunt.app.util.NetworkErrorHandler.getReadableErrorMessage(e, "Taxonomy sync failed")
+        }
     }
 
     fun search(query: String, mode: String): List<IndustryDefinition> {

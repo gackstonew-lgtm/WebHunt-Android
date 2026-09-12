@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FilterList
@@ -30,7 +31,6 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sparkles
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Warning
@@ -127,7 +127,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Sparkles,
+                            imageVector = Icons.Default.AutoAwesome,
                             contentDescription = "Radar",
                             tint = WebHuntRoyal,
                             modifier = Modifier.size(13.dp)
