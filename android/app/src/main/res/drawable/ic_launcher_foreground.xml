@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="1.8"
+        android:scaleY="1.8"
+        android:translateX="25.2"
+        android:translateY="25.2">
+        <!-- Rounded outer rectangle border -->
+        <path
+            android:fillColor="#0D0D0D"
+            android:strokeColor="#0048BB"
+            android:strokeWidth="2"
+            android:pathData="M6,0 L26,0 A6,6 0 0,1 32,6 L32,26 A6,6 0 0,1 26,32 L6,32 A6,6 0 0,1 0,26 L0,6 A6,6 0 0,1 6,0 Z" />
+
+        <!-- Stylized "W" in Royal Blue -->
+        <path
+            android:fillColor="#0048BB"
+            android:pathData="M7,8 L10.5,8 L13.5,21 L16,11.5 L18.5,21 L21.5,8 L25,8 L20.5,24 L16.5,24 L14.5,15.5 L12.5,24 L8.5,24 Z" />
+
+        <!-- Accent Cream radar dot at top right -->
+        <path
+            android:fillColor="#F8F3F0"
+            android:pathData="M24,7 m-2.5,0 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0" />
+    </group>
+</vector>

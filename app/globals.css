@@ -1,0 +1,434 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root, .dark {
+  /* WebHunt Delta Royal Blue & Deep Dark Mode Theme Tokens */
+  --background: #000000;          /* Deep Black background */
+  --foreground: #F8F3F0;          /* Light Cream #F8F3F0 primary text */
+
+  --card: #0D0D0D;                /* Raised pure dark surface */
+  --card-foreground: #F8F3F0;     /* Card text */
+  --card-inner: #161616;
+
+  --popover: #0D0D0D;             /* Popovers / Modals */
+  --popover-foreground: #F8F3F0;
+
+  --surface-subtle: #080808;      /* Subtle inner surfaces and inputs */
+  --surface-elevated: #161616;    /* Hover and elevated surface */
+
+  --primary: #0048BB;             /* Royal Blue #0048BB Accent */
+  --primary-foreground: #FFFFFF;  /* White text on royal blue */
+  --primary-hover: #00388A;       /* Deeper royal blue for hover */
+
+  --paper: #F8F3F0;               /* Primary Light Cream content */
+  --stone: #E6DFD5;               /* Secondary light content / labels */
+  --royal: #0048BB;               /* Royal Blue visual accent */
+  --cream: #F8F3F0;               /* Light Cream visual token */
+
+  --muted: #161616;               /* Muted surface */
+  --muted-foreground: #A8A196;    /* Stone desaturated for optimal contrast */
+
+  --accent: #161616;              /* Hover & active chip surface */
+  --accent-foreground: #F8F3F0;
+
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+
+  --border: rgba(248, 243, 240, 0.12);        /* Hairline cream border */
+  --border-subtle: rgba(248, 243, 240, 0.06); /* Faint cream separator */
+  --border-strong: rgba(248, 243, 240, 0.25); /* Focused border */
+
+  --input: #080808;               /* Input background */
+  --ring: rgba(0, 72, 187, 0.45); /* Royal Blue focus ring */
+
+  --success: #3FA372;             /* Success status */
+  --success-foreground: #F8F3F0;
+}
+
+.light {
+  /* WebHunt Delta Light Cream Theme Tokens with High-Contrast Darkened Fonts */
+  --background: #F8F3F0;          /* Light Cream background from uploaded spec */
+  --foreground: #080C14;          /* Deep rich dark text for high visibility */
+
+  --card: #FFFFFF;                /* Clean light card surface */
+  --card-foreground: #080C14;
+  --card-inner: #F1ECE6;          /* Warm cream card inner */
+
+  --popover: #FFFFFF;
+  --popover-foreground: #080C14;
+
+  --surface-subtle: #F4ECE4;      /* Subtle inner surfaces and inputs */
+  --surface-elevated: #ECE4DA;    /* Hover and elevated surface */
+
+  --primary: #0048BB;             /* Royal Blue #0048BB Accent */
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #00388A;
+
+  --paper: #FFFFFF;
+  --stone: #1E293B;               /* Slate-800 for high readability */
+  --royal: #0048BB;
+  --cream: #F8F3F0;
+
+  --muted: #EFE8E0;
+  --muted-foreground: #334155;    /* Slate-700 for clear secondary text */
+
+  --accent: #E5DDD3;
+  --accent-foreground: #080C14;
+
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+
+  --border: rgba(15, 23, 42, 0.14);
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.3);
+
+  --input: #FFFFFF;
+  --ring: rgba(0, 72, 187, 0.45);
+
+  --success: #15803D;
+  --success-foreground: #FFFFFF;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Light Mode Overrides for Hardcoded Dark Hexes with Crisp Darkened Fonts */
+.light body {
+  background-color: #F8F3F0 !important;
+  color: #080C14 !important;
+}
+
+/* Modal and Drawer Backdrop Overlays */
+.light .bg-black\/80,
+.light .bg-black\/50,
+.light .bg-black\/90,
+.light .bg-black\/60 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+/* Background Surface Tokens */
+.light .bg-\[\#000000\] {
+  background-color: #F8F3F0 !important;
+}
+
+.light .bg-\[\#000000\]\/90,
+.light .bg-\[\#000000\]\/95 {
+  background-color: rgba(248, 243, 240, 0.94) !important;
+}
+
+.light .bg-\[\#0D0D0D\] {
+  background-color: #FFFFFF !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+.light .bg-\[\#0D0D0D\]\/90,
+.light .bg-\[\#0D0D0D\]\/95 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.light .bg-\[\#080808\] {
+  background-color: #F4ECE4 !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+.light .bg-\[\#080808\]\/80,
+.light .bg-\[\#080808\]\/90 {
+  background-color: rgba(244, 236, 228, 0.94) !important;
+}
+
+.light .bg-\[\#090909\] {
+  background-color: #F4ECE4 !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+.light .bg-\[\#101010\] {
+  background-color: #FFFFFF !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+.light .bg-\[\#121212\] {
+  background-color: #F8F3F0 !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+.light .bg-\[\#121212\]\/90 {
+  background-color: rgba(248, 243, 240, 0.95) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+.light .bg-\[\#141414\] {
+  background-color: #F1ECE6 !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+.light .bg-\[\#161616\] {
+  background-color: #ECE4DA !important;
+  color: #080C14 !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+.light .bg-\[\#161616\]\/50,
+.light .bg-\[\#161616\]\/60,
+.light .bg-\[\#161616\]\/70,
+.light .bg-\[\#161616\]\/80 {
+  background-color: rgba(236, 228, 218, 0.65) !important;
+}
+
+.light .bg-\[\#181818\] {
+  background-color: #FFFFFF !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+.light .bg-\[\#1C1C1C\] {
+  background-color: #FFFFFF !important;
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+.light .bg-\[\#222222\] {
+  background-color: #E2D9CE !important;
+  color: #334155 !important;
+}
+
+/* Tinted Selection & Semantic Status Surfaces */
+.light .bg-\[\#10192A\] {
+  background-color: #EEF4FF !important;
+  color: #0048BB !important;
+  border-color: rgba(0, 72, 187, 0.35) !important;
+}
+
+.light .bg-\[\#101914\] {
+  background-color: #F0FDF4 !important;
+  color: #15803D !important;
+  border-color: rgba(21, 128, 61, 0.3) !important;
+}
+
+/* High Contrast Darkened Fonts for Light Theme */
+.light .text-\[\#F8F3F0\] {
+  color: #080C14 !important;
+}
+
+.light .text-\[\#A8A196\] {
+  color: #334155 !important;
+  font-weight: 500;
+}
+
+.light .text-\[\#A8A196\]\/50,
+.light .text-\[\#A8A196\]\/60,
+.light .text-\[\#A8A196\]\/80 {
+  color: #475569 !important;
+}
+
+.light label {
+  color: #1E293B !important;
+}
+
+.light input,
+.light textarea,
+.light select {
+  color: #080C14 !important;
+}
+
+.light input[type="text"],
+.light input[type="number"],
+.light input[type="email"],
+.light input[type="password"],
+.light textarea {
+  background-color: #FFFFFF !important;
+  color: #080C14 !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+}
+
+.light input::placeholder,
+.light textarea::placeholder {
+  color: #64748B !important;
+}
+
+.light select option,
+.light option {
+  background-color: #FFFFFF !important;
+  color: #080C14 !important;
+}
+
+/* Darkened borders in light mode */
+.light .border-\[rgba\(248\,243\,240\,0\.06\)\] {
+  border-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.08\)\] {
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.1\)\] {
+  border-color: rgba(15, 23, 42, 0.10) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.10\)\] {
+  border-color: rgba(15, 23, 42, 0.10) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.12\)\] {
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.14\)\] {
+  border-color: rgba(15, 23, 42, 0.15) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.15\)\] {
+  border-color: rgba(15, 23, 42, 0.16) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.16\)\] {
+  border-color: rgba(15, 23, 42, 0.18) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.2\)\] {
+  border-color: rgba(15, 23, 42, 0.22) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.20\)\] {
+  border-color: rgba(15, 23, 42, 0.22) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.22\)\] {
+  border-color: rgba(15, 23, 42, 0.24) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.24\)\] {
+  border-color: rgba(15, 23, 42, 0.25) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.25\)\] {
+  border-color: rgba(15, 23, 42, 0.25) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.3\)\] {
+  border-color: rgba(15, 23, 42, 0.30) !important;
+}
+
+.light .border-\[rgba\(248\,243\,240\,0\.30\)\] {
+  border-color: rgba(15, 23, 42, 0.30) !important;
+}
+
+/* Light Mode Divides */
+.light .divide-\[rgba\(248\,243\,240\,0\.06\)\] > :not([hidden]) ~ :not([hidden]),
+.light .divide-\[rgba\(248\,243\,240\,0\.06\)\] > * + * {
+  border-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+.light .divide-\[rgba\(248\,243\,240\,0\.08\)\] > :not([hidden]) ~ :not([hidden]),
+.light .divide-\[rgba\(248\,243\,240\,0\.08\)\] > * + * {
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+.light .divide-\[rgba\(248\,243\,240\,0\.1\)\] > :not([hidden]) ~ :not([hidden]),
+.light .divide-\[rgba\(248\,243\,240\,0\.10\)\] > :not([hidden]) ~ :not([hidden]),
+.light .divide-\[rgba\(248\,243\,240\,0\.1\)\] > * + *,
+.light .divide-\[rgba\(248\,243\,240\,0\.10\)\] > * + * {
+  border-color: rgba(15, 23, 42, 0.10) !important;
+}
+
+.light .divide-\[rgba\(248\,243\,240\,0\.12\)\] > :not([hidden]) ~ :not([hidden]),
+.light .divide-\[rgba\(248\,243\,240\,0\.12\)\] > * + * {
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+/* Light Mode Interactive Hover States */
+.light .hover\:bg-\[\#161616\]:hover,
+.light .hover\:bg-\[\#181818\]:hover,
+.light .hover\:bg-\[\#1C1C1C\]:hover,
+.light .hover\:bg-\[\#121212\]:hover {
+  background-color: #ECE4DA !important;
+}
+
+.light .hover\:bg-\[\#161616\]\/50:hover,
+.light .hover\:bg-\[\#161616\]\/60:hover,
+.light .hover\:bg-\[\#161616\]\/80:hover {
+  background-color: rgba(236, 228, 218, 0.75) !important;
+}
+
+.light .hover\:bg-\[\#222222\]:hover {
+  background-color: #E2D9CE !important;
+}
+
+.light .hover\:text-\[\#F8F3F0\]:hover {
+  color: #080C14 !important;
+}
+
+.light .hover\:border-\[rgba\(248\,243\,240\,0\.12\)\]:hover {
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+.light .hover\:border-\[rgba\(248\,243\,240\,0\.14\)\]:hover {
+  border-color: rgba(15, 23, 42, 0.16) !important;
+}
+
+.light .hover\:border-\[rgba\(248\,243\,240\,0\.22\)\]:hover {
+  border-color: rgba(15, 23, 42, 0.24) !important;
+}
+
+.light .hover\:border-\[rgba\(248\,243\,240\,0\.25\)\]:hover {
+  border-color: rgba(15, 23, 42, 0.25) !important;
+}
+
+.light .group:hover .group-hover\:text-\[\#F8F3F0\] {
+  color: #080C14 !important;
+}
+
+.light .group:hover .group-hover\:text-\[\#0048BB\] {
+  color: #0048BB !important;
+}
+
+.light .group:hover .group-hover\:border-\[rgba\(248\,243\,240\,0\.24\)\] {
+  border-color: rgba(15, 23, 42, 0.25) !important;
+}
+
+.light .group:hover .group-hover\:border-\[rgba\(248\,243\,240\,0\.14\)\] {
+  border-color: rgba(15, 23, 42, 0.16) !important;
+}
+
+.light .group:hover .group-hover\:border-\[rgba\(248\,243\,240\,0\.12\)\] {
+  border-color: rgba(15, 23, 42, 0.14) !important;
+}
+
+.light .ring-\[\#000000\] {
+  --tw-ring-color: #F8F3F0 !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-elevated);
+  border-radius: 9999px;
+  border: 1px solid var(--border-subtle);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+.light ::-webkit-scrollbar-track {
+  background: #F8F3F0;
+}
+.light ::-webkit-scrollbar-thumb {
+  background: #D4CBC0;
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+/* Focus outline helpers */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

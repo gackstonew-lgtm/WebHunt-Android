@@ -1,0 +1,351 @@
+// Neon PostgreSQL schema for production deployment
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                      String            @id @default(uuid())
+  email                   String            @unique
+  name                    String?
+  passwordHash            String?
+  role                    String            @default("user") // "user" | "admin"
+  status                  String            @default("active") // "active" | "suspended"
+  emailVerified           DateTime?
+  verificationToken       String?           @unique
+  verificationTokenExpiry DateTime?
+  verificationOtpHash     String?
+  verificationOtpExpiry   DateTime?
+  verificationOtpAttempts Int               @default(0)
+  verificationOtpSentAt   DateTime?
+  resetToken              String?           @unique
+  resetTokenExpiry        DateTime?
+  failedLoginAttempts     Int               @default(0)
+  lockoutUntil            DateTime?
+  lastLoginAt             DateTime?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  
+  profile                 UserProfile?
+  workspaces              WorkspaceMember[]
+  leads                   Lead[]
+  searches                Search[]
+  proposals               ProposalDraft[]
+  applications            Application[]
+  outreachMessages        OutreachMessage[]
+  followUpTasks           FollowUpTask[]
+  accounts                Account[]
+
+  @@index([email])
+  @@index([verificationToken])
+  @@index([resetToken])
+}
+
+model Account {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String    // "google" | "meta_whatsapp"
+  providerAccountId String
+  accessToken       String?   @db.Text
+  refreshToken      String?   @db.Text
+  tokenExpiry       DateTime?
+  scope             String?
+  email             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Workspace {
+  id        String            @id @default(uuid())
+  name      String
+  ownerId   String
+  createdAt DateTime          @default(now())
+  members   WorkspaceMember[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(uuid())
+  workspaceId String
+  userId      String
+  role        String    @default("OWNER") // "OWNER" | "MEMBER" | "VIEWER"
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model UserProfile {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName           String
+  professionalTitle  String
+  bio                String?  @db.Text
+  yearsExperience    Int?     @default(3)
+  skillsJson         String   @db.Text // JSON array e.g. ["Next.js", "React", "TypeScript", "Tailwind CSS", "Node.js"]
+  portfolioUrl       String?
+  githubUrl          String?
+  linkedinUrl        String?
+  resumeUrl          String?
+  hourlyRateUsd      Float?   @default(45.0)
+  hourlyRateKes      Float?   @default(5000.0)
+  projectRateUsd     Float?   @default(1500.0)
+  projectRateKes     Float?   @default(150000.0)
+  currency           String   @default("USD") // "USD" | "KES"
+  timezone           String   @default("Africa/Nairobi")
+  languagesJson      String?  @db.Text // JSON array e.g. ["English", "Swahili"]
+  phone              String?
+  whatsapp           String?
+  email              String?
+  city               String?  @default("Nairobi")
+  country            String?  @default("Kenya")
+  mpesaTillNumber    String?
+  mpesaPaybillNumber String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Search {
+  id             String   @id @default(uuid())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  niche          String
+  location       String
+  provider       String   @default("all")
+  radius         Int      @default(25)
+  totalFetched   Int      @default(0)
+  qualifiedLeads Int      @default(0)
+  createdAt      DateTime @default(now())
+  leads          Lead[]
+
+  @@index([niche, location])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model Lead {
+  id                  String            @id @default(uuid())
+  userId              String?
+  user                User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  searchId            String?
+  search              Search?           @relation(fields: [searchId], references: [id], onDelete: SetNull)
+  businessName        String
+  phone               String
+  phoneFormatted      String
+  address             String?
+  city                String?
+  state               String?
+  postalCode          String?
+  category            String?
+  rating              Float?
+  reviewCount         Int?              @default(0)
+  hasWebsite          Boolean           @default(false)
+  noWebsiteConfidence String            @default("High") // "High" | "Medium" | "Verified"
+  sourceProvider      String            @default("osm") // "osm" | "google" | "yelp" | "foursquare" | "remotive" | "arbeitnow" | "himalayas" | "weworkremotely" | "jobspresso" | "remoteok" | "africa"
+  providerPlaceId     String?
+  sourceUrl           String?
+  sourceType          String?           // "business_directory" | "job_board" | "official_api" | "public_feed"
+  remoteType          String?           // "worldwide" | "regional" | "country_specific" | "hybrid" | "onsite"
+  verificationStatus  String            @default("SOURCE_LISTED") // "SOURCE_LISTED" | "VERIFIED" | "UNAVAILABLE"
+  dataQualityScore    Float?            // 0.0 - 1.0 quality score
+  latitude            Float?
+  longitude           Float?
+  lastVerifiedAt      DateTime?
+  
+  // Enriched Contact Channels
+  email               String?
+  whatsapp            String?
+  contactPageUrl      String?
+  bookingUrl          String?
+  hasContactForm      Boolean?          @default(false)
+  facebook            String?
+  instagram           String?
+  linkedin            String?
+  twitter             String?
+  enrichmentJson      String?           @db.Text // JSON representation of all DiscoveredContact items and metadata
+
+  // Pipeline CRM fields
+  pipelineType        String            @default("sales") // "sales" | "job_application"
+  status              String            @default("NEW") // Sales: "NEW"|"QUALIFIED"|"CONTACTED"|"INTERESTED"|"NEGOTIATION"|"CLOSED"|"NOT_INTERESTED". Job: "SAVED"|"PREPARING"|"APPLIED"|"INTERVIEW"|"OFFER"|"REJECTED"|"WITHDRAWN"
+  estimatedValue      Float             @default(1500.0) // Estimated website/POS deal value
+  notes               String?           @db.Text
+  tags                String?           // Comma separated tags
+  contactedAt         DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  proposals           ProposalDraft[]
+  applications        Application[]
+  outreachMessages    OutreachMessage[]
+  followUpTasks       FollowUpTask[]
+
+  @@unique([userId, phone, businessName])
+  @@index([status])
+  @@index([category])
+  @@index([city])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@index([pipelineType])
+}
+
+model ProposalDraft {
+  id            String   @id @default(uuid())
+  leadId        String?
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  lead          Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  title         String
+  templateType  String   // "technical_pitch" | "comprehensive_cover" | "local_website_pitch" | "agency_modernization"
+  subject       String
+  greeting      String
+  body          String   @db.Text
+  callToAction  String   @db.Text
+  fullText      String   @db.Text
+  variablesJson String?  @db.Text
+  version       Int      @default(1)
+  status        String   @default("DRAFT") // "DRAFT" | "READY" | "SENT" | "ARCHIVED"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([leadId])
+  @@index([userId])
+}
+
+model Application {
+  id                String    @id @default(uuid())
+  jobId             String?   // Lead ID of online job
+  userId            String?
+  user              User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  lead              Lead?     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobTitle          String
+  company           String
+  jobUrl            String
+  applicationMethod String    @default("external_form") // "email" | "external_form" | "direct_api"
+  status            String    @default("SAVED") // "SAVED" | "PREPARING" | "APPLIED" | "INTERVIEW" | "OFFER" | "REJECTED" | "WITHDRAWN"
+  resumeVersion     String?
+  coverLetterText   String?   @db.Text
+  appliedAt         DateTime?
+  followUpDate      DateTime?
+  recruiterEmail    String?
+  recruiterName     String?
+  salaryOffer       String?
+  checklistJson     String?   @db.Text // JSON checklist of documents prepared
+  notes             String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([jobId])
+  @@index([userId])
+  @@index([status])
+}
+
+model OutreachMessage {
+  id                 String   @id @default(uuid())
+  leadId             String?
+  userId             String?
+  user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  lead               Lead?    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  channel            String   // "email" | "whatsapp" | "call"
+  direction          String   @default("OUTBOUND") // "OUTBOUND" | "INBOUND"
+  status             String   @default("SENT") // "DRAFT" | "QUEUED" | "SENT" | "DELIVERED" | "READ" | "FAILED" | "BOUNCED"
+  recipient          String   // email address or phone number
+  subject            String?
+  messageBody        String   @db.Text
+  externalMessageId  String?  // Gmail messageId or WhatsApp messageId
+  deliveryStatusJson String?  @db.Text
+  auditMetadataJson  String?  @db.Text
+  sentAt             DateTime @default(now())
+  createdAt          DateTime @default(now())
+
+  @@index([leadId])
+  @@index([userId])
+  @@index([recipient])
+}
+
+model FollowUpTask {
+  id          String    @id @default(uuid())
+  leadId      String?
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  lead        Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  taskType    String    @default("follow_up_email") // "follow_up_email" | "follow_up_whatsapp" | "follow_up_call" | "interview_prep"
+  title       String
+  notes       String?   @db.Text
+  dueAt       DateTime
+  completedAt DateTime?
+  isCompleted Boolean   @default(false)
+  priority    String    @default("MEDIUM") // "LOW" | "MEDIUM" | "HIGH"
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([leadId])
+  @@index([userId])
+  @@index([dueAt, isCompleted])
+}
+
+model ConsentRecord {
+  id           String    @id @default(uuid())
+  identifier   String    // phone number or email address
+  type         String    // "whatsapp" | "email"
+  hasOptedIn   Boolean   @default(true)
+  hasOptedOut  Boolean   @default(false)
+  optInSource  String?
+  optOutReason String?
+  optInDate    DateTime? @default(now())
+  optOutDate   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([identifier, type])
+  @@index([identifier])
+}
+
+model ApiCache {
+  id        String   @id @default(uuid())
+  cacheKey  String   @unique
+  provider  String
+  query     String
+  location  String
+  payload   String   @db.Text
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([cacheKey])
+  @@index([expiresAt])
+}
+
+model WebhookEvent {
+  id          String   @id @default(uuid())
+  eventId     String   @unique
+  eventType   String
+  payload     String?  @db.Text
+  processedAt DateTime @default(now())
+
+  @@index([eventId])
+}
+
+model EmailDeliveryLog {
+  id          String   @id @default(uuid())
+  email       String
+  emailType   String   // "verification_otp" | "password_reset" | "system"
+  messageId   String?  @unique
+  status      String   @default("queued") // "queued" | "sent" | "delivered" | "bounced" | "failed"
+  error       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([email])
+  @@index([messageId])
+}
+

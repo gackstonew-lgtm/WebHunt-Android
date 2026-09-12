@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.WebHunt" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/webhunt_black</item>
+        <item name="android:statusBarColor">@color/webhunt_black</item>
+        <item name="android:navigationBarColor">@color/webhunt_black</item>
+    </style>
+</resources>

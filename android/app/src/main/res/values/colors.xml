@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="webhunt_black">#000000</color>
+    <color name="webhunt_card">#0D0D0D</color>
+    <color name="webhunt_surface">#080808</color>
+    <color name="webhunt_hover">#161616</color>
+    <color name="webhunt_royal">#0048BB</color>
+    <color name="webhunt_royal_hover">#00388A</color>
+    <color name="webhunt_paper">#F8F3F0</color>
+    <color name="webhunt_muted">#A8A196</color>
+    <color name="webhunt_emerald">#5EBA8C</color>
+</resources>

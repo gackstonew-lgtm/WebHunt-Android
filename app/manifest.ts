@@ -1,0 +1,74 @@
+import { MetadataRoute } from 'next';
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'WebHunt Delta',
+    short_name: 'WebHunt Delta',
+    description: 'Worldwide Local Business & Remote Tech Discovery Workspace',
+    start_url: '/',
+    id: '/',
+    scope: '/',
+    display: 'standalone',
+    orientation: 'any',
+    theme_color: '#000000',
+    background_color: '#000000',
+    lang: 'en',
+    dir: 'ltr',
+    categories: ['business', 'productivity', 'utilities'],
+    icons: [
+      {
+        src: '/icons/icon-192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any',
+      },
+      {
+        src: '/icons/icon-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any',
+      },
+      {
+        src: '/icons/maskable-192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/icons/maskable-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/icon.svg',
+        sizes: 'any',
+        type: 'image/svg+xml',
+        purpose: 'any',
+      },
+    ],
+    shortcuts: [
+      {
+        name: 'Radar',
+        short_name: 'Radar',
+        description: 'Discover local businesses without websites & remote jobs',
+        url: '/',
+        icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }],
+      },
+      {
+        name: 'CRM',
+        short_name: 'CRM',
+        description: 'Track outreach and job applications',
+        url: '/pipeline',
+        icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }],
+      },
+      {
+        name: 'History',
+        short_name: 'History',
+        description: 'View saved queries and historical scans',
+        url: '/searches',
+        icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }],
+      },
+    ],
+  };
+}
