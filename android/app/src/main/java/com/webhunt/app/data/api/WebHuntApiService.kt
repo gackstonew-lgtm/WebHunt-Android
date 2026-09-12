@@ -2,6 +2,7 @@ package com.webhunt.app.data.api
 
 import com.webhunt.app.data.model.AuthMeResponse
 import com.webhunt.app.data.model.AuthResponse
+import com.webhunt.app.data.model.ForgotPasswordRequest
 import com.webhunt.app.data.model.GenericApiResponse
 import com.webhunt.app.data.model.LoginRequest
 import com.webhunt.app.data.model.ProfileResponse
@@ -30,6 +31,9 @@ interface WebHuntApiService {
 
     @POST("api/mobile/auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
+
+    @POST("api/mobile/auth/forgot-password")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<GenericApiResponse>
 
     @GET("api/mobile/auth/me")
     suspend fun getAuthMe(): Response<AuthMeResponse>

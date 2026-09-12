@@ -48,3 +48,8 @@ data class GenericApiResponse(
     val message: String? = null,
     val error: String? = null
 )
+
+@Serializable
+data class ForgotPasswordRequest(
+    val email: String
+)

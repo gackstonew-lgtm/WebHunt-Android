@@ -52,6 +52,21 @@ class AuthRepository(
         }
     }
 
+    suspend fun forgotPassword(email: String): Result<String> {
+        return try {
+            val response = api.forgotPassword(com.webhunt.app.data.model.ForgotPasswordRequest(email = email))
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(response.body()?.message ?: "If an account exists, a password reset link has been dispatched.")
+            } else {
+                val errorMsg = com.webhunt.app.util.NetworkErrorHandler.getHttpErrorMessage(response, "Password reset request failed")
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            val msg = com.webhunt.app.util.NetworkErrorHandler.getReadableErrorMessage(e, "Password reset request failed")
+            Result.failure(Exception(msg, e))
+        }
+    }
+
     suspend fun checkAuthStatus(): Result<AuthMeResponse> {
         return try {
             val response = api.getAuthMe()

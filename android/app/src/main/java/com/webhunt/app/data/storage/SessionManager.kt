@@ -9,6 +9,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+enum class AppThemeMode {
+    DARK, LIGHT, SYSTEM
+}
+
 class SessionManager(context: Context) {
 
     private val masterKey = MasterKey.Builder(context)
@@ -33,6 +37,23 @@ class SessionManager(context: Context) {
 
     private val _currentUser = MutableStateFlow<UserDto?>(getUser())
     val currentUser: StateFlow<UserDto?> = _currentUser.asStateFlow()
+
+    private val _themeMode = MutableStateFlow(getSavedThemeMode())
+    val themeMode: StateFlow<AppThemeMode> = _themeMode.asStateFlow()
+
+    fun setThemeMode(mode: AppThemeMode) {
+        prefs.edit().putString(KEY_THEME_MODE, mode.name).apply()
+        _themeMode.value = mode
+    }
+
+    private fun getSavedThemeMode(): AppThemeMode {
+        val raw = prefs.getString(KEY_THEME_MODE, AppThemeMode.DARK.name)
+        return try {
+            AppThemeMode.valueOf(raw ?: AppThemeMode.DARK.name)
+        } catch (e: Exception) {
+            AppThemeMode.DARK
+        }
+    }
 
     fun saveSession(token: String, user: UserDto) {
         prefs.edit()
@@ -78,5 +99,6 @@ class SessionManager(context: Context) {
         private const val KEY_USER_EMAIL = "user_email"
         private const val KEY_USER_NAME = "user_name"
         private const val KEY_USER_ROLE = "user_role"
+        private const val KEY_THEME_MODE = "webhunt_theme_mode"
     }
 }

@@ -42,7 +42,8 @@ class HomeViewModel(
     private val pipelineRepo: PipelineRepository,
     private val taxonomyRepo: TaxonomyRepository,
     private val authRepo: AuthRepository,
-    private val profileRepo: ProfileRepository
+    private val profileRepo: ProfileRepository,
+    private val historyManager: com.webhunt.app.data.storage.SearchHistoryManager? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -134,6 +135,20 @@ class HomeViewModel(
                     isLoading = false,
                     searchResult = data
                 )
+                val queryText = if (current.mode == "physical") current.niche else current.onlineQuery
+                val locationText = if (current.mode == "physical") {
+                    if (current.city.isNotBlank()) "${current.city}, ${current.country}" else current.country
+                } else "Remote / Global"
+                val yieldCount = if (data.mode == "physical") data.physicalLeads.size else data.onlineLeads.size
+
+                historyManager?.logSearch(
+                    mode = current.mode,
+                    query = queryText,
+                    location = locationText,
+                    provider = data.provider ?: if (current.mode == "physical") "serper" else "jsearch",
+                    totalFetched = yieldCount,
+                    qualifiedCount = yieldCount
+                )
             }.onFailure { error ->
                 val msg = error.message ?: "Failed to execute lead scan"
                 val isAuth = msg.contains("Authentication required", ignoreCase = true)
@@ -147,6 +162,25 @@ class HomeViewModel(
                 )
             }
         }
+    }
+
+    fun runSearchFromHistory(item: com.webhunt.app.data.model.SearchHistoryItem) {
+        if (item.mode == "physical") {
+            val country = if (item.location.contains(",")) item.location.substringAfterLast(",").trim() else item.location
+            val city = if (item.location.contains(",")) item.location.substringBeforeLast(",").trim() else ""
+            _uiState.value = _uiState.value.copy(
+                mode = "physical",
+                niche = item.query,
+                country = country.ifBlank { "Kenya" },
+                city = city
+            )
+        } else {
+            _uiState.value = _uiState.value.copy(
+                mode = "online",
+                onlineQuery = item.query
+            )
+        }
+        executeSearch()
     }
 
     fun savePhysicalLead(lead: PhysicalLead) {

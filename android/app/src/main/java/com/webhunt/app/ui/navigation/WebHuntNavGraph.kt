@@ -10,6 +10,8 @@ import androidx.navigation.compose.composable
 import com.webhunt.app.WebHuntApplication
 import com.webhunt.app.ui.screens.auth.AuthScreen
 import com.webhunt.app.ui.screens.auth.AuthViewModel
+import com.webhunt.app.ui.screens.history.HistoryScreen
+import com.webhunt.app.ui.screens.history.HistoryViewModel
 import com.webhunt.app.ui.screens.home.HomeScreen
 import com.webhunt.app.ui.screens.home.HomeViewModel
 import com.webhunt.app.ui.screens.pipeline.PipelineScreen
@@ -25,6 +27,7 @@ fun WebHuntNavGraph(
     paddingValues: PaddingValues,
     homeViewModel: HomeViewModel,
     pipelineViewModel: PipelineViewModel,
+    historyViewModel: HistoryViewModel,
     authViewModel: AuthViewModel,
     subscriptionViewModel: SubscriptionViewModel,
     profileViewModel: ProfileViewModel
@@ -45,6 +48,19 @@ fun WebHuntNavGraph(
         composable(NavDestination.Pipeline.route) {
             PipelineScreen(
                 viewModel = pipelineViewModel
+            )
+        }
+
+        composable(NavDestination.History.route) {
+            HistoryScreen(
+                viewModel = historyViewModel,
+                onLaunchRadar = {
+                    navController.navigate(NavDestination.Home.route)
+                },
+                onReRunScan = { historyItem ->
+                    homeViewModel.runSearchFromHistory(historyItem)
+                    navController.navigate(NavDestination.Home.route)
+                }
             )
         }
 

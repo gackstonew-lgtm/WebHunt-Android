@@ -36,11 +36,15 @@ class WebHuntApplication : Application() {
     lateinit var subscriptionRepository: SubscriptionRepository
         private set
 
+    lateinit var searchHistoryManager: com.webhunt.app.data.storage.SearchHistoryManager
+        private set
+
     override fun onCreate() {
         super.onCreate()
         instance = this
 
         sessionManager = SessionManager(this)
+        searchHistoryManager = com.webhunt.app.data.storage.SearchHistoryManager(this)
         networkModule = NetworkModule(this, sessionManager)
 
         authRepository = AuthRepository(networkModule.apiService, sessionManager)

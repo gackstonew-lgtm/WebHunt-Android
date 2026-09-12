@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.webhunt.app.data.model.UserProfileData
 import com.webhunt.app.data.repository.ProfileRepository
+import com.webhunt.app.data.storage.AppThemeMode
+import com.webhunt.app.data.storage.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,10 +19,15 @@ data class ProfileUiState(
     val errorMessage: String? = null
 )
 
-class ProfileViewModel(private val profileRepo: ProfileRepository) : ViewModel() {
+class ProfileViewModel(
+    private val profileRepo: ProfileRepository,
+    private val sessionManager: SessionManager
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
+
+    val themeMode: StateFlow<AppThemeMode> = sessionManager.themeMode
 
     init {
         loadProfile()
@@ -38,9 +45,38 @@ class ProfileViewModel(private val profileRepo: ProfileRepository) : ViewModel()
         }
     }
 
+    fun setThemeMode(mode: AppThemeMode) {
+        sessionManager.setThemeMode(mode)
+    }
+
+    fun logout() {
+        sessionManager.clearSession()
+    }
+
     fun updateField(block: (UserProfileData) -> UserProfileData) {
         val current = _uiState.value.profile
         _uiState.value = _uiState.value.copy(profile = block(current), saveSuccess = false)
+    }
+
+    fun addSkill(skill: String) {
+        val trimmed = skill.trim()
+        if (trimmed.isNotBlank()) {
+            val current = _uiState.value.profile
+            if (!current.skills.contains(trimmed)) {
+                _uiState.value = _uiState.value.copy(
+                    profile = current.copy(skills = current.skills + trimmed),
+                    saveSuccess = false
+                )
+            }
+        }
+    }
+
+    fun removeSkill(skill: String) {
+        val current = _uiState.value.profile
+        _uiState.value = _uiState.value.copy(
+            profile = current.copy(skills = current.skills.filter { it != skill }),
+            saveSuccess = false
+        )
     }
 
     fun saveProfile() {
@@ -55,3 +91,4 @@ class ProfileViewModel(private val profileRepo: ProfileRepository) : ViewModel()
         }
     }
 }
+

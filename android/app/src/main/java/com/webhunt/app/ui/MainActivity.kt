@@ -20,11 +20,11 @@ import com.webhunt.app.ui.components.WebHuntTopBar
 import com.webhunt.app.ui.navigation.NavDestination
 import com.webhunt.app.ui.navigation.WebHuntNavGraph
 import com.webhunt.app.ui.screens.auth.AuthViewModel
+import com.webhunt.app.ui.screens.history.HistoryViewModel
 import com.webhunt.app.ui.screens.home.HomeViewModel
 import com.webhunt.app.ui.screens.pipeline.PipelineViewModel
 import com.webhunt.app.ui.screens.profile.ProfileViewModel
 import com.webhunt.app.ui.screens.subscription.SubscriptionViewModel
-import com.webhunt.app.ui.theme.WebHuntBlack
 import com.webhunt.app.ui.theme.WebHuntTheme
 
 class MainActivity : ComponentActivity() {
@@ -43,7 +43,8 @@ class MainActivity : ComponentActivity() {
                         app.pipelineRepository,
                         app.taxonomyRepository,
                         app.authRepository,
-                        app.profileRepository
+                        app.profileRepository,
+                        app.searchHistoryManager
                     ) as T
                 }
             }
@@ -57,6 +58,15 @@ class MainActivity : ComponentActivity() {
                         app.pipelineRepository,
                         app.profileRepository
                     ) as T
+                }
+            }
+        }
+
+        val historyViewModel: HistoryViewModel by viewModels {
+            object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    @Suppress("UNCHECKED_CAST")
+                    return HistoryViewModel(app.searchHistoryManager) as T
                 }
             }
         }
@@ -83,31 +93,50 @@ class MainActivity : ComponentActivity() {
             object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     @Suppress("UNCHECKED_CAST")
-                    return ProfileViewModel(app.profileRepository) as T
+                    return ProfileViewModel(
+                        app.profileRepository,
+                        app.sessionManager
+                    ) as T
                 }
             }
         }
 
         setContent {
-            WebHuntTheme {
+            val themeMode by app.sessionManager.themeMode.collectAsState()
+
+            WebHuntTheme(themeMode = themeMode) {
+                val colors = WebHuntTheme.colors
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route ?: NavDestination.Home.route
 
                 val isAuthenticated by app.sessionManager.isAuthenticated.collectAsState()
                 val savedLeadsCount by app.pipelineRepository.savedLeadIds.collectAsState()
+                val subStatus by subscriptionViewModel.subscriptionStatus.collectAsState()
+                val hasActiveSub = subStatus.hasActiveSubscription
 
                 Scaffold(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(WebHuntBlack),
-                    containerColor = WebHuntBlack,
+                        .background(colors.background),
+                    containerColor = colors.background,
                     topBar = {
                         WebHuntTopBar(
                             isAuthenticated = isAuthenticated,
+                            hasActiveSubscription = hasActiveSub,
                             onAuthClick = {
                                 if (currentRoute != NavDestination.Auth.route) {
                                     navController.navigate(NavDestination.Auth.route)
+                                }
+                            },
+                            onProfileClick = {
+                                if (currentRoute != NavDestination.Profile.route) {
+                                    navController.navigate(NavDestination.Profile.route)
+                                }
+                            },
+                            onUpgradeClick = {
+                                if (currentRoute != NavDestination.Subscription.route) {
+                                    navController.navigate(NavDestination.Subscription.route)
                                 }
                             }
                         )
@@ -135,6 +164,7 @@ class MainActivity : ComponentActivity() {
                         paddingValues = innerPadding,
                         homeViewModel = homeViewModel,
                         pipelineViewModel = pipelineViewModel,
+                        historyViewModel = historyViewModel,
                         authViewModel = authViewModel,
                         subscriptionViewModel = subscriptionViewModel,
                         profileViewModel = profileViewModel

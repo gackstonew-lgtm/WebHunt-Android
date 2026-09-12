@@ -55,3 +55,15 @@ data class ProviderStatusesResponse(
     val online: List<ProviderStatus> = emptyList(),
     val error: String? = null
 )
+
+@Serializable
+data class SearchHistoryItem(
+    val id: String,
+    val mode: String, // "physical" or "online"
+    val query: String,
+    val location: String,
+    val provider: String,
+    val totalFetched: Int = 0,
+    val qualifiedCount: Int = 0,
+    val createdAt: String
+)
