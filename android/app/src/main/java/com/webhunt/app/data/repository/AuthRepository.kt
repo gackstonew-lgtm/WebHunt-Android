@@ -9,7 +9,8 @@ import com.webhunt.app.data.storage.SessionManager
 
 class AuthRepository(
     private val api: WebHuntApiService,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val onClearData: (() -> Unit)? = null
 ) {
     val isAuthenticated = sessionManager.isAuthenticated
     val currentUser = sessionManager.currentUser
@@ -96,5 +97,6 @@ class AuthRepository(
             api.logout()
         } catch (_: Exception) {}
         sessionManager.clearSession()
+        onClearData?.invoke()
     }
 }

@@ -61,11 +61,10 @@ export class YelpFusionProvider implements IPhysicalLeadProvider {
       for (const biz of businesses) {
         if (biz.is_closed) continue;
 
-        const rawPhone = biz.phone || biz.display_phone;
-        if (!rawPhone) continue;
-
-        const phoneValidation = validateAndFormatPhone(rawPhone, country);
-        if (!phoneValidation.isValid) continue;
+        const rawPhone = biz.phone || biz.display_phone || "";
+        const phoneValidation = rawPhone
+          ? validateAndFormatPhone(rawPhone, country)
+          : { isValid: false, normalized: "", formatted: "Phone unavailable", status: "unavailable" as const };
 
         const addressLine = Array.isArray(biz.location?.display_address)
           ? biz.location.display_address.join(", ")
@@ -79,13 +78,14 @@ export class YelpFusionProvider implements IPhysicalLeadProvider {
         const categories = Array.isArray(biz.categories)
           ? biz.categories.map((c: any) => c.title).join(", ")
           : term;
+        const sourceUrl = biz.url || `https://www.yelp.com/biz/${biz.id}`;
 
         results.push({
           id: `yelp-${biz.id}`,
           type: "physical",
           businessName: biz.name || "Local Business",
-          phone: phoneValidation.normalized || rawPhone,
-          phoneFormatted: phoneValidation.formatted,
+          phone: phoneValidation.normalized || rawPhone || "",
+          phoneFormatted: phoneValidation.formatted || "Phone unavailable",
           phoneStatus: phoneValidation.status,
           address: addressParsed.formatted,
           city: itemCity,
@@ -99,16 +99,20 @@ export class YelpFusionProvider implements IPhysicalLeadProvider {
           reviewCount: typeof biz.review_count === "number" ? biz.review_count : 0,
           hasWebsite: false,
           websiteUrl: null,
+          websiteStatus: "NO_WEBSITE",
+          websiteOpportunity: "NO_WEBSITE",
           noWebsiteConfidence: "Verified",
           sourceProvider: "yelp",
-          sourceUrl: biz.url || `https://www.yelp.com/biz/${biz.id}`,
+          sources: ["yelp"],
+          provenance: [{ source: "yelp", sourceUrl, retrievedAt: new Date() }],
+          sourceUrl,
           sourceType: "business_directory",
           providerPlaceId: biz.id,
           status: "NEW",
           estimatedValue: 1500,
           notes: null,
           tags: "yelp-directory-lead",
-          dataQualityScore: 0.90,
+          dataQualityScore: phoneValidation.isValid ? 0.90 : 0.70,
           verificationStatus: "SOURCE_LISTED",
           retrievedAt: new Date(),
           lastVerifiedAt: new Date(),

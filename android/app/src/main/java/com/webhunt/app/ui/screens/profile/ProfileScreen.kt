@@ -19,12 +19,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.Palette
@@ -58,16 +60,21 @@ fun ProfileScreen(
     viewModel: ProfileViewModel,
     onNavigateToSubscription: () -> Unit = {},
     onLogout: () -> Unit = {},
+    onBack: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    BackHandler(onBack = onBack)
+
     val state by viewModel.uiState.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
     val p = state.profile
     val colors = WebHuntTheme.colors
     var newSkillText by remember { mutableStateOf("") }
 
-    val initials = (p.fullName.ifBlank { "User" })
-        .split(" ")
+    val displayName = p.fullName.ifBlank { p.email?.substringBefore("@") ?: "User" }
+    val initials = displayName
+        .split(" ", "_", ".")
+        .filter { it.isNotBlank() }
         .mapNotNull { it.firstOrNull() }
         .take(2)
         .joinToString("")
@@ -80,6 +87,55 @@ fun ProfileScreen(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Top Navigation Header
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(colors.cardElevated)
+                        .border(1.dp, colors.border, RoundedCornerShape(10.dp))
+                        .clickable { onBack() }
+                        .padding(horizontal = 12.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = colors.primaryText,
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Back",
+                        color = colors.primaryText,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                if (state.saveSuccess) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(colors.emeraldTint)
+                            .border(1.dp, colors.emerald.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                            .clickable { onBack() }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Check, contentDescription = null, tint = colors.emerald, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(text = "Done", color = colors.emerald, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
         // Identity Header Card
         item {
             Box(
@@ -132,7 +188,7 @@ fun ProfileScreen(
                                 )
                                 Spacer(modifier = Modifier.width(5.dp))
                                 Icon(
-                                    imageVector = Icons.Default.ExitToApp,
+                                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                                     contentDescription = "Sign Out",
                                     tint = colors.mutedText,
                                     modifier = Modifier.size(13.dp)
@@ -164,7 +220,7 @@ fun ProfileScreen(
 
                         Column {
                             Text(
-                                text = p.fullName.ifBlank { "WebHunt Operator" },
+                                text = p.fullName.ifBlank { p.email?.substringBefore("@") ?: "WebHunt Operator" },
                                 color = colors.primaryText,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
@@ -551,6 +607,7 @@ fun ProfileScreen(
                             OutlinedTextField(
                                 value = p.fullName,
                                 onValueChange = { value -> viewModel.updateField { it.copy(fullName = value) } },
+                                placeholder = { Text("Enter your full name or agency", color = colors.mutedText.copy(alpha = 0.5f), fontSize = 11.sp) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -571,6 +628,7 @@ fun ProfileScreen(
                             OutlinedTextField(
                                 value = p.professionalTitle,
                                 onValueChange = { value -> viewModel.updateField { it.copy(professionalTitle = value) } },
+                                placeholder = { Text("e.g. Software Engineer, Agency Owner", color = colors.mutedText.copy(alpha = 0.5f), fontSize = 11.sp) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(10.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -591,6 +649,7 @@ fun ProfileScreen(
                             OutlinedTextField(
                                 value = p.bio ?: "",
                                 onValueChange = { value -> viewModel.updateField { it.copy(bio = value) } },
+                                placeholder = { Text("Summary of your technical capabilities and engineering focus...", color = colors.mutedText.copy(alpha = 0.5f), fontSize = 11.sp) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(10.dp),
                                 minLines = 2,
@@ -743,8 +802,9 @@ fun ProfileScreen(
                                 Text(text = "Hourly Rate (USD)", color = colors.mutedText, fontSize = 11.sp)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 OutlinedTextField(
-                                    value = (p.hourlyRateUsd ?: 45.0).toInt().toString(),
-                                    onValueChange = { v -> viewModel.updateField { it.copy(hourlyRateUsd = v.toDoubleOrNull() ?: 0.0) } },
+                                    value = if (p.hourlyRateUsd != null && p.hourlyRateUsd > 0.0) p.hourlyRateUsd.toInt().toString() else "",
+                                    onValueChange = { v -> viewModel.updateField { it.copy(hourlyRateUsd = v.toDoubleOrNull()) } },
+                                    placeholder = { Text("e.g. 50", color = colors.mutedText.copy(alpha = 0.5f), fontSize = 11.sp) },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -763,8 +823,9 @@ fun ProfileScreen(
                                 Text(text = "Hourly Rate (KES)", color = colors.mutedText, fontSize = 11.sp)
                                 Spacer(modifier = Modifier.height(4.dp))
                                 OutlinedTextField(
-                                    value = (p.hourlyRateKes ?: 5000.0).toInt().toString(),
-                                    onValueChange = { v -> viewModel.updateField { it.copy(hourlyRateKes = v.toDoubleOrNull() ?: 0.0) } },
+                                    value = if (p.hourlyRateKes != null && p.hourlyRateKes > 0.0) p.hourlyRateKes.toInt().toString() else "",
+                                    onValueChange = { v -> viewModel.updateField { it.copy(hourlyRateKes = v.toDoubleOrNull()) } },
+                                    placeholder = { Text("e.g. 6500", color = colors.mutedText.copy(alpha = 0.5f), fontSize = 11.sp) },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -834,6 +895,36 @@ fun ProfileScreen(
                         Text(
                             text = if (state.saveSuccess) "Settings Saved & Synchronized!" else "Save Profile & Settings",
                             color = colors.onPrimaryAction,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            }
+
+            if (state.saveSuccess) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(colors.cardElevated)
+                        .border(1.dp, colors.border, RoundedCornerShape(12.dp))
+                        .clickable { onBack() }
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null,
+                            tint = colors.primaryText,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Return to Workspace / Radar",
+                            color = colors.primaryText,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
                         )

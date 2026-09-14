@@ -68,16 +68,19 @@ export class OsmOverpassProvider implements IPhysicalLeadProvider {
       // Build targeted tag filters if available
       let tagClauses = "";
       if (normalized.osmTags.length > 0) {
-        tagClauses = normalized.osmTags.slice(0, 5).map(t => `
+        tagClauses = normalized.osmTags.slice(0, 8).map(t => `
           node(around:${radiusMeters},${lat},${lon})["${t.key}"="${t.value}"];
           way(around:${radiusMeters},${lat},${lon})["${t.key}"="${t.value}"];
         `).join("");
       } else {
+        const keyword = (normalized.businessSearchTerms[0] || params.niche || "business").split(/\s+/)[0].replace(/[^a-zA-Z0-9]/g, "");
         tagClauses = `
-          node(around:${radiusMeters},${lat},${lon})["phone"];
-          node(around:${radiusMeters},${lat},${lon})["contact:phone"];
-          way(around:${radiusMeters},${lat},${lon})["phone"];
-          way(around:${radiusMeters},${lat},${lon})["contact:phone"];
+          node(around:${radiusMeters},${lat},${lon})["name"~"${keyword}",i];
+          way(around:${radiusMeters},${lat},${lon})["name"~"${keyword}",i];
+          node(around:${radiusMeters},${lat},${lon})["craft"];
+          node(around:${radiusMeters},${lat},${lon})["shop"];
+          node(around:${radiusMeters},${lat},${lon})["amenity"];
+          node(around:${radiusMeters},${lat},${lon})["office"];
         `;
       }
 
@@ -89,10 +92,11 @@ export class OsmOverpassProvider implements IPhysicalLeadProvider {
         out body 60;
       `;
 
+      // Prioritize high-performance fast mirror endpoints with automatic failover
       const endpoints = [
-        "https://overpass-api.de/api/interpreter",
         "https://lz4.overpass-api.de/api/interpreter",
         "https://overpass.kumi.systems/api/interpreter",
+        "https://overpass-api.de/api/interpreter",
       ];
 
       for (const endpoint of endpoints) {
@@ -119,7 +123,7 @@ export class OsmOverpassProvider implements IPhysicalLeadProvider {
             if (parsed.length > 0) return parsed;
           }
         } catch (e) {
-          // Try next endpoint
+          // Gracefully continue to next failover mirror
         }
       }
 
@@ -138,17 +142,18 @@ export class OsmOverpassProvider implements IPhysicalLeadProvider {
   ): Promise<PhysicalLead[]> {
     try {
       const mainTerm = normalized.primaryIndustry ? normalized.primaryIndustry.name : params.niche;
+      const cleanMainTerm = mainTerm.split("&")[0].trim();
       const searchTerms = [
-        `${mainTerm} in ${fullLocationQuery}`,
+        `${cleanMainTerm}, ${city || country}`,
+        `${cleanMainTerm}, ${country}`,
+        `${cleanMainTerm} in ${fullLocationQuery}`,
         ...normalized.businessSearchTerms.slice(0, 3).map(t => `${t}, ${city || country}`),
-        `${mainTerm}, ${city}`,
-        `${mainTerm}, ${country}`
       ];
       
       for (const term of searchTerms) {
         const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
           term
-        )}&format=json&limit=30&extratags=1&addressdetails=1`;
+        )}&format=json&limit=35&extratags=1&addressdetails=1`;
 
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), 6000);
@@ -167,21 +172,30 @@ export class OsmOverpassProvider implements IPhysicalLeadProvider {
         if (!Array.isArray(data) || data.length === 0) continue;
 
         const results: PhysicalLead[] = [];
-        const seenNames = new Set<string>();
+        const seenKeys = new Set<string>();
 
         for (const item of data) {
           const name = item.display_name ? item.display_name.split(",")[0].trim() : (item.name || "");
-          if (!name || seenNames.has(name.toLowerCase())) continue;
-          seenNames.add(name.toLowerCase());
+          if (!name) continue;
 
           const extra = item.extratags || {};
           const rawPhone = extra.phone || extra["contact:phone"] || extra["phone:mobile"] || "";
           const website = extra.website || extra["contact:website"] || extra.url || "";
 
-          // Keep businesses without website
+          // Keep businesses without website on record
           if (website && website.trim() !== "") continue;
 
-          const phoneValidation = validateAndFormatPhone(rawPhone, country);
+          const phoneValidation = rawPhone 
+            ? validateAndFormatPhone(rawPhone, country)
+            : { isValid: false, normalized: "", formatted: "Phone unavailable", status: "unavailable" as const };
+
+          const dedupKey = phoneValidation.isValid 
+            ? phoneValidation.normalized 
+            : `${name.toLowerCase()}_${(city || country).toLowerCase()}`;
+
+          if (seenKeys.has(dedupKey)) continue;
+          seenKeys.add(dedupKey);
+
           const addr = item.address || {};
           const street = [addr.house_number, addr.road || addr.street].filter(Boolean).join(" ");
           const itemCity = addr.city || addr.town || addr.suburb || city || country;
@@ -191,7 +205,7 @@ export class OsmOverpassProvider implements IPhysicalLeadProvider {
           const parsedAddress = parseAndFormatAddress(street || item.display_name, itemCity, country, postalCode);
           const osmUrl = `https://www.openstreetmap.org/${item.osm_type || "node"}/${item.osm_id}`;
 
-          // Extract potential enriched contact metadata from OSM tags
+          // Extract potential contact metadata from OSM tags
           const email = extra.email || extra["contact:email"] || null;
           const whatsapp = extra.whatsapp || extra["contact:whatsapp"] || extra["phone:whatsapp"] || null;
           const facebook = extra.facebook || extra["contact:facebook"] || null;
@@ -215,8 +229,8 @@ export class OsmOverpassProvider implements IPhysicalLeadProvider {
             id: `osm-${item.osm_type || "poi"}-${item.osm_id}`,
             type: "physical",
             businessName: name,
-            phone: phoneValidation.normalized || rawPhone,
-            phoneFormatted: phoneValidation.formatted,
+            phone: phoneValidation.normalized || rawPhone || "",
+            phoneFormatted: phoneValidation.formatted || "Phone unavailable",
             phoneStatus: phoneValidation.status,
             email: email,
             emails: email ? [email] : [],
@@ -229,21 +243,25 @@ export class OsmOverpassProvider implements IPhysicalLeadProvider {
             postalCode: postalCode || null,
             latitude: item.lat ? parseFloat(item.lat) : null,
             longitude: item.lon ? parseFloat(item.lon) : null,
-            category: item.type || item.class || mainTerm,
+            category: item.type || item.class || cleanMainTerm,
             rating: null,
             reviewCount: 0,
             hasWebsite: false,
             websiteUrl: null,
+            websiteStatus: "NO_WEBSITE",
+            websiteOpportunity: "NO_WEBSITE",
             noWebsiteConfidence: "Verified",
             sourceProvider: "osm",
+            sources: ["osm"],
+            provenance: [{ source: "osm", sourceUrl: osmUrl, retrievedAt: new Date() }],
             sourceUrl: osmUrl,
             sourceType: "business_directory",
             providerPlaceId: `osm-${item.osm_id}`,
             status: "NEW",
             estimatedValue: country.toLowerCase().includes("kenya") ? 1200 : 1500,
             notes: null,
-            tags: "no-website",
-            dataQualityScore: 0.88,
+            tags: "candidate-lead",
+            dataQualityScore: phoneValidation.isValid ? 0.88 : 0.65,
             verificationStatus: "SOURCE_LISTED",
             retrievedAt: new Date(),
             lastVerifiedAt: new Date(),
@@ -272,24 +290,33 @@ export class OsmOverpassProvider implements IPhysicalLeadProvider {
     maxResults: number
   ): PhysicalLead[] {
     const results: PhysicalLead[] = [];
-    const seenPhones = new Set<string>();
+    const seenKeys = new Set<string>();
 
     for (const el of elements) {
       const tags = el.tags || {};
       const name = tags.name || tags["brand"] || tags["operator"] || tags["shop"] || tags["amenity"];
       if (!name) continue;
 
-      const rawPhone = tags.phone || tags["contact:phone"] || tags["phone:mobile"];
-      if (!rawPhone) continue;
-
-      // Filter: Keep only businesses without websites
+      // Filter: Keep only businesses without websites on record
       if (tags.website || tags["contact:website"] || tags["url"]) continue;
 
-      const phoneValidation = validateAndFormatPhone(rawPhone, country);
-      if (!phoneValidation.isValid) continue;
+      const rawPhone = tags.phone || tags["contact:phone"] || tags["phone:mobile"];
+      const phoneValidation = rawPhone 
+        ? validateAndFormatPhone(rawPhone, country)
+        : { isValid: false, normalized: "", formatted: "Phone unavailable", status: "unavailable" as const };
 
-      if (seenPhones.has(phoneValidation.normalized)) continue;
-      seenPhones.add(phoneValidation.normalized);
+      const street = [tags["addr:housenumber"], tags["addr:street"]].filter(Boolean).join(" ");
+      const itemCity = tags["addr:city"] || city || tags["addr:suburb"] || country;
+      const itemState = tags["addr:state"] || tags["addr:province"] || "";
+      const postalCode = tags["addr:postcode"] || "";
+
+      // Deduplicate using normalized phone if available, or name + city
+      const dedupKey = phoneValidation.isValid 
+        ? phoneValidation.normalized 
+        : `${name.toLowerCase()}_${itemCity.toLowerCase()}`;
+
+      if (seenKeys.has(dedupKey)) continue;
+      seenKeys.add(dedupKey);
 
       const category =
         tags.shop ||
@@ -300,11 +327,6 @@ export class OsmOverpassProvider implements IPhysicalLeadProvider {
         tags.tourism ||
         tags.leisure ||
         niche;
-
-      const street = [tags["addr:housenumber"], tags["addr:street"]].filter(Boolean).join(" ");
-      const itemCity = tags["addr:city"] || city || tags["addr:suburb"] || country;
-      const itemState = tags["addr:state"] || tags["addr:province"] || "";
-      const postalCode = tags["addr:postcode"] || "";
 
       const addressParsed = parseAndFormatAddress(street, itemCity, country, postalCode);
       const osmWebUrl = `https://www.openstreetmap.org/${el.type || "node"}/${el.id}`;
@@ -333,8 +355,8 @@ export class OsmOverpassProvider implements IPhysicalLeadProvider {
         id: `osm-${el.type}-${el.id}`,
         type: "physical",
         businessName: name,
-        phone: phoneValidation.normalized || rawPhone,
-        phoneFormatted: phoneValidation.formatted,
+        phone: phoneValidation.normalized || rawPhone || "",
+        phoneFormatted: phoneValidation.formatted || "Phone unavailable",
         phoneStatus: phoneValidation.status,
         email: email,
         emails: email ? [email] : [],
@@ -352,16 +374,20 @@ export class OsmOverpassProvider implements IPhysicalLeadProvider {
         reviewCount: 0,
         hasWebsite: false,
         websiteUrl: null,
+        websiteStatus: "NO_WEBSITE",
+        websiteOpportunity: "NO_WEBSITE",
         noWebsiteConfidence: "Verified",
         sourceProvider: "osm",
+        sources: ["osm"],
+        provenance: [{ source: "osm", sourceUrl: osmWebUrl, retrievedAt: new Date() }],
         sourceUrl: osmWebUrl,
         sourceType: "business_directory",
         providerPlaceId: `osm-${el.id}`,
         status: "NEW",
         estimatedValue: country.toLowerCase().includes("kenya") ? 1200 : 1500,
         notes: null,
-        tags: "no-website",
-        dataQualityScore: 0.88,
+        tags: "candidate-lead",
+        dataQualityScore: phoneValidation.isValid ? 0.88 : 0.65,
         verificationStatus: "SOURCE_LISTED",
         retrievedAt: new Date(),
         lastVerifiedAt: new Date(),

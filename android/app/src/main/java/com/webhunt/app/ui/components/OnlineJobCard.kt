@@ -57,10 +57,23 @@ fun OnlineJobCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val isKenyaEligible = job.location.contains("Kenya", ignoreCase = true) ||
-            job.location.contains("Africa", ignoreCase = true) ||
-            job.remoteType.equals("worldwide", ignoreCase = true) ||
-            job.location.contains("Anywhere", ignoreCase = true)
+    val employerName = job.displayEmployer
+    val sourceLabel = if (job.sources.size > 1) {
+        "${job.sources.size} Sources"
+    } else {
+        job.source.uppercase()
+    }
+
+    val (eligibilityLabel, isRegionalHighlight) = when {
+        !job.eligibility.isNullOrBlank() -> Pair(job.eligibility, true)
+        job.location.contains("Kenya", ignoreCase = true) -> Pair("Kenya Eligible", true)
+        job.location.contains("Africa", ignoreCase = true) -> Pair("Africa Eligible", true)
+        job.location.contains("EMEA", ignoreCase = true) -> Pair("EMEA Eligible", true)
+        job.remoteType.equals("worldwide", ignoreCase = true) ||
+                job.location.contains("Anywhere", ignoreCase = true) ||
+                job.location.contains("Worldwide", ignoreCase = true) -> Pair("Worldwide Remote", true)
+        else -> Pair("Global Remote", false)
+    }
 
     Box(
         modifier = modifier
@@ -91,7 +104,7 @@ fun OnlineJobCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = job.company.take(2).uppercase(),
+                            text = employerName.take(2).uppercase(),
                             color = WebHuntPaper,
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
@@ -102,7 +115,7 @@ fun OnlineJobCard(
 
                     Column {
                         Text(
-                            text = job.company,
+                            text = employerName,
                             color = WebHuntPaper,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp
@@ -135,7 +148,7 @@ fun OnlineJobCard(
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = job.source.uppercase(),
+                            text = sourceLabel,
                             color = WebHuntMuted,
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold
@@ -147,13 +160,13 @@ fun OnlineJobCard(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
-                            .background(if (isKenyaEligible) WebHuntEmeraldTint else WebHuntHover)
-                            .border(1.dp, if (isKenyaEligible) WebHuntEmerald.copy(alpha = 0.3f) else WebHuntBorder, RoundedCornerShape(6.dp))
+                            .background(if (isRegionalHighlight) WebHuntEmeraldTint else WebHuntHover)
+                            .border(1.dp, if (isRegionalHighlight) WebHuntEmerald.copy(alpha = 0.3f) else WebHuntBorder, RoundedCornerShape(6.dp))
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = if (isKenyaEligible) "Kenya Eligible" else "Global Remote",
-                            color = if (isKenyaEligible) WebHuntEmerald else WebHuntRoyal,
+                            text = eligibilityLabel,
+                            color = if (isRegionalHighlight) WebHuntEmerald else WebHuntRoyal,
                             fontSize = 8.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -184,14 +197,15 @@ fun OnlineJobCard(
                 )
             }
 
-            // Tags
-            if (job.tags.isNotEmpty()) {
+            // Tags & Skills
+            val displayTags = job.displaySkills
+            if (displayTags.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    job.tags.take(6).forEach { tag ->
+                    displayTags.take(6).forEach { tag ->
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
@@ -212,18 +226,57 @@ fun OnlineJobCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Salary & Date
+            // Salary, Relevance Score & Date
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = job.salary ?: "Competitive",
-                    color = WebHuntEmerald,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 12.sp
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = job.salary?.takeIf { it.isNotBlank() } ?: "Salary not disclosed",
+                        color = WebHuntEmerald,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp
+                    )
+
+                    job.displayOpportunityType?.let { oppType ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(WebHuntHover)
+                                .border(1.dp, WebHuntBorderSubtle, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = oppType,
+                                color = WebHuntMuted,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    job.normalizedRelevanceScore?.let { matchPct ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(WebHuntHover)
+                                .border(1.dp, WebHuntRoyal.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "$matchPct% Match",
+                                color = if (matchPct >= 80) WebHuntEmerald else WebHuntRoyal,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -234,7 +287,7 @@ fun OnlineJobCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = Formatters.formatDate(job.postedDate),
+                        text = Formatters.formatDate(job.publishedAt ?: job.postedDate),
                         color = WebHuntMuted,
                         fontSize = 10.sp
                     )
@@ -283,7 +336,7 @@ fun OnlineJobCard(
                         .clip(RoundedCornerShape(10.dp))
                         .background(WebHuntSurface)
                         .border(1.dp, WebHuntBorder, RoundedCornerShape(10.dp))
-                        .clickable { IntentUtils.openBrowser(context, job.url) },
+                        .clickable { IntentUtils.openBrowser(context, job.displayApplicationUrl) },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

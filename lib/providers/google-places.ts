@@ -64,11 +64,10 @@ export class GooglePlacesProvider implements IPhysicalLeadProvider {
           continue; // Has website -> skip!
         }
 
-        const rawPhone = place.internationalPhoneNumber || place.nationalPhoneNumber;
-        if (!rawPhone) continue;
-
-        const phoneValidation = validateAndFormatPhone(rawPhone, country);
-        if (!phoneValidation.isValid) continue;
+        const rawPhone = place.internationalPhoneNumber || place.nationalPhoneNumber || "";
+        const phoneValidation = rawPhone
+          ? validateAndFormatPhone(rawPhone, country)
+          : { isValid: false, normalized: "", formatted: "Phone unavailable", status: "unavailable" as const };
 
         let itemCity = city;
         let state = "";
@@ -83,13 +82,14 @@ export class GooglePlacesProvider implements IPhysicalLeadProvider {
         }
 
         const addressParsed = parseAndFormatAddress(place.formattedAddress, itemCity, country, postalCode);
+        const sourceUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.displayName?.text || "")}&query_place_id=${place.id}`;
 
         qualified.push({
           id: `google-${place.id}`,
           type: "physical",
           businessName: place.displayName?.text || "Unknown Business",
-          phone: phoneValidation.normalized || rawPhone,
-          phoneFormatted: phoneValidation.formatted,
+          phone: phoneValidation.normalized || rawPhone || "",
+          phoneFormatted: phoneValidation.formatted || "Phone unavailable",
           phoneStatus: phoneValidation.status,
           address: addressParsed.formatted,
           city: itemCity || country,
@@ -103,16 +103,20 @@ export class GooglePlacesProvider implements IPhysicalLeadProvider {
           reviewCount: typeof place.userRatingCount === "number" ? place.userRatingCount : 0,
           hasWebsite: false,
           websiteUrl: null,
+          websiteStatus: "NO_WEBSITE",
+          websiteOpportunity: "NO_WEBSITE",
           noWebsiteConfidence: "Verified",
           sourceProvider: "google",
-          sourceUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.displayName?.text || "")}&query_place_id=${place.id}`,
+          sources: ["google"],
+          provenance: [{ source: "google", sourceUrl, retrievedAt: new Date() }],
+          sourceUrl,
           sourceType: "business_directory",
           providerPlaceId: place.id,
           status: "NEW",
           estimatedValue: 1500,
           notes: null,
           tags: "google-verified-no-website",
-          dataQualityScore: 0.95,
+          dataQualityScore: phoneValidation.isValid ? 0.95 : 0.75,
           verificationStatus: "VERIFIED",
           retrievedAt: new Date(),
           lastVerifiedAt: new Date(),

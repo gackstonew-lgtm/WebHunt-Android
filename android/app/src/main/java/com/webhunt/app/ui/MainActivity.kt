@@ -95,7 +95,8 @@ class MainActivity : ComponentActivity() {
                     @Suppress("UNCHECKED_CAST")
                     return ProfileViewModel(
                         app.profileRepository,
-                        app.sessionManager
+                        app.sessionManager,
+                        app.authRepository
                     ) as T
                 }
             }
@@ -115,6 +116,16 @@ class MainActivity : ComponentActivity() {
                 val subStatus by subscriptionViewModel.subscriptionStatus.collectAsState()
                 val hasActiveSub = subStatus.hasActiveSubscription
 
+                val isSubScreen = currentRoute == NavDestination.Profile.route || currentRoute == NavDestination.Auth.route
+
+                androidx.compose.runtime.LaunchedEffect(isAuthenticated) {
+                    if (isAuthenticated) {
+                        app.profileRepository.fetchProfile()
+                        app.pipelineRepository.fetchPipeline()
+                        app.subscriptionRepository.fetchSubscription()
+                    }
+                }
+
                 Scaffold(
                     modifier = Modifier
                         .fillMaxSize()
@@ -124,6 +135,7 @@ class MainActivity : ComponentActivity() {
                         WebHuntTopBar(
                             isAuthenticated = isAuthenticated,
                             hasActiveSubscription = hasActiveSub,
+                            onBackClick = if (isSubScreen) { { navController.popBackStack() } } else null,
                             onAuthClick = {
                                 if (currentRoute != NavDestination.Auth.route) {
                                     navController.navigate(NavDestination.Auth.route)
@@ -148,7 +160,7 @@ class MainActivity : ComponentActivity() {
                             onNavigate = { dest ->
                                 if (currentRoute != dest.route) {
                                     navController.navigate(dest.route) {
-                                        popUpTo(NavDestination.Home.route) {
+                                        popUpTo(navController.graph.id) {
                                             saveState = true
                                         }
                                         launchSingleTop = true

@@ -180,6 +180,8 @@ export async function enrichLeadContacts(
   return enriched;
 }
 
+import { recoverBusinessContacts } from "./discovery";
+
 /**
  * Enriches an array of leads concurrently with non-blocking Promise.allSettled.
  */
@@ -191,29 +193,79 @@ export async function enrichLeadsBatch(
 
   const enrichedPromises = leads.map(async (lead) => {
     try {
-      const enrichment = await enrichLeadContacts(lead, options);
+      if (lead.type === "physical") {
+        const pLead = lead as PhysicalLead;
+        const recovery = await recoverBusinessContacts(pLead, { timeoutMs: options.timeoutMs || 3500 });
+        const enrichment = await enrichLeadContacts(pLead, options);
 
-      const allContacts: DiscoveredContact[] = [
-        ...enrichment.phones,
-        ...enrichment.emails,
-        ...enrichment.whatsapp,
-        ...enrichment.socials,
-        ...enrichment.contactPages,
-        ...enrichment.bookingPages,
-      ];
+        const mergedEmails = Array.from(new Set([
+          ...enrichment.emails.map(e => e.value),
+          ...recovery.recoveredEmails,
+        ]));
 
-      return {
-        ...lead,
-        email: enrichment.primaryEmail,
-        emails: enrichment.emails.map(e => e.value),
-        whatsapp: enrichment.primaryWhatsApp,
-        contactPageUrl: enrichment.primaryContactPage,
-        bookingUrl: enrichment.primaryBookingPage,
-        hasContactForm: enrichment.hasContactForm,
-        socialProfiles: enrichment.socialProfiles,
-        contacts: allContacts,
-        enrichment,
-      };
+        const mergedSocials = {
+          ...(enrichment.socialProfiles || {}),
+          ...(recovery.recoveredSocials || {}),
+        };
+
+        const allContacts: DiscoveredContact[] = [
+          ...enrichment.phones,
+          ...enrichment.emails,
+          ...enrichment.whatsapp,
+          ...enrichment.socials,
+          ...enrichment.contactPages,
+          ...enrichment.bookingPages,
+          ...recovery.contacts,
+        ];
+
+        const primaryPhone = recovery.recoveredPhone || enrichment.primaryPhone || pLead.phone || "";
+        const primaryPhoneFormatted = recovery.recoveredPhoneFormatted || enrichment.primaryPhoneFormatted || pLead.phoneFormatted || "Phone unavailable";
+        const primaryPhoneStatus = (primaryPhone && primaryPhoneFormatted !== "Phone unavailable") ? ("verified" as const) : ("unavailable" as const);
+
+        return {
+          ...pLead,
+          phone: primaryPhone,
+          phoneFormatted: primaryPhoneFormatted,
+          phoneStatus: primaryPhoneStatus,
+          email: recovery.recoveredEmail || enrichment.primaryEmail,
+          emails: mergedEmails,
+          whatsapp: recovery.recoveredWhatsApp || enrichment.primaryWhatsApp,
+          contactPageUrl: recovery.recoveredContactPageUrl || enrichment.primaryContactPage,
+          bookingUrl: recovery.recoveredBookingUrl || enrichment.primaryBookingPage,
+          hasContactForm: recovery.hasContactForm || enrichment.hasContactForm,
+          socialProfiles: Object.keys(mergedSocials).length > 0 ? mergedSocials : undefined,
+          contacts: allContacts,
+          websiteStatus: recovery.websiteStatus,
+          websiteOpportunity: recovery.websiteOpportunity,
+          contactQualityScore: recovery.contactQualityScore,
+          noWebsiteConfidence: recovery.websiteConfidence,
+          enrichment,
+        };
+      } else {
+        const enrichment = await enrichLeadContacts(lead, options);
+
+        const allContacts: DiscoveredContact[] = [
+          ...enrichment.phones,
+          ...enrichment.emails,
+          ...enrichment.whatsapp,
+          ...enrichment.socials,
+          ...enrichment.contactPages,
+          ...enrichment.bookingPages,
+        ];
+
+        return {
+          ...lead,
+          email: enrichment.primaryEmail,
+          emails: enrichment.emails.map(e => e.value),
+          whatsapp: enrichment.primaryWhatsApp,
+          contactPageUrl: enrichment.primaryContactPage,
+          bookingUrl: enrichment.primaryBookingPage,
+          hasContactForm: enrichment.hasContactForm,
+          socialProfiles: enrichment.socialProfiles,
+          contacts: allContacts,
+          enrichment,
+        };
+      }
     } catch (err) {
       console.warn(`[Enrichment] Non-fatal enrichment error on lead ${lead.id}:`, err);
       return lead;

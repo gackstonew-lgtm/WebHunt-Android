@@ -88,13 +88,14 @@ export async function fetchPipelineLeadsAction(userId?: string): Promise<{
         };
         return jobLead;
       } else {
+        const isUnlisted = rec.phone.startsWith("unlisted-") || rec.phoneFormatted === "Phone unavailable";
         const physLead: PhysicalLead = {
           id: rec.id,
           type: "physical",
           businessName: rec.businessName,
           phone: rec.phone,
-          phoneFormatted: rec.phoneFormatted,
-          phoneStatus: "verified",
+          phoneFormatted: isUnlisted ? "Phone unavailable" : rec.phoneFormatted,
+          phoneStatus: isUnlisted ? "unavailable" : "verified",
           address: rec.address,
           city: rec.city,
           state: rec.state,
@@ -161,8 +162,11 @@ export async function saveLeadToPipelineAction(
     const businessName = isPhysical
       ? pLead!.businessName
       : `${jLead!.title} @ ${jLead!.company}`;
-    const phone = isPhysical ? pLead!.phone : jLead!.url;
-    const phoneFormatted = isPhysical ? pLead!.phoneFormatted : jLead!.url;
+    const rawPhone = isPhysical ? pLead!.phone : jLead!.url;
+    const phone = rawPhone && rawPhone.trim() ? rawPhone.trim() : (isPhysical ? `unlisted-${pLead!.id}` : "");
+    const phoneFormatted = isPhysical
+      ? (phone.startsWith("unlisted-") ? "Phone unavailable" : (pLead!.phoneFormatted?.trim() || phone))
+      : jLead!.url;
     const pipelineType = isPhysical ? "sales" : "job_application";
 
     if (!businessName || !phone) {

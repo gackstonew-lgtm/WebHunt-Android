@@ -15,6 +15,10 @@ export async function GET() {
     }
 
     const res = await getUserProfileAction(session.userId);
+    if (res.success && res.data) {
+      if (!res.data.email) res.data.email = session.email;
+      if (!res.data.fullName) res.data.fullName = session.email.split("@")[0];
+    }
     return NextResponse.json(res);
   } catch (error: any) {
     return NextResponse.json(

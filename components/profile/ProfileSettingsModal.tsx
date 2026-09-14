@@ -320,7 +320,7 @@ export default function ProfileSettingsModal({ onClose, onProfileUpdated }: Prof
                     value={profile.fullName}
                     onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#161616] border border-[rgba(248,243,240,0.12)] focus:outline-none focus:ring-1 focus:ring-[#0048BB] text-xs text-[#F8F3F0]"
-                    placeholder="e.g. Gackstone Baraka"
+                    placeholder="e.g. Alex Johnson"
                   />
                 </div>
 

@@ -62,11 +62,10 @@ export class FoursquarePlacesProvider implements IPhysicalLeadProvider {
           continue;
         }
 
-        const rawPhone = place.tel;
-        if (!rawPhone) continue;
-
-        const phoneValidation = validateAndFormatPhone(rawPhone, country);
-        if (!phoneValidation.isValid) continue;
+        const rawPhone = place.tel || "";
+        const phoneValidation = rawPhone
+          ? validateAndFormatPhone(rawPhone, country)
+          : { isValid: false, normalized: "", formatted: "Phone unavailable", status: "unavailable" as const };
 
         const addressLine = place.location?.formatted_address || place.location?.address || "";
         const itemCity = place.location?.locality || city;
@@ -77,13 +76,14 @@ export class FoursquarePlacesProvider implements IPhysicalLeadProvider {
         const category = Array.isArray(place.categories) && place.categories.length > 0
           ? place.categories[0].name
           : query;
+        const sourceUrl = `https://foursquare.com/v/${place.fsq_id}`;
 
         results.push({
           id: `fsq-${place.fsq_id}`,
           type: "physical",
           businessName: place.name || "Local Business",
-          phone: phoneValidation.normalized || rawPhone,
-          phoneFormatted: phoneValidation.formatted,
+          phone: phoneValidation.normalized || rawPhone || "",
+          phoneFormatted: phoneValidation.formatted || "Phone unavailable",
           phoneStatus: phoneValidation.status,
           address: addressParsed.formatted,
           city: itemCity,
@@ -97,16 +97,20 @@ export class FoursquarePlacesProvider implements IPhysicalLeadProvider {
           reviewCount: place.stats?.total_ratings || 0,
           hasWebsite: false,
           websiteUrl: null,
+          websiteStatus: "NO_WEBSITE",
+          websiteOpportunity: "NO_WEBSITE",
           noWebsiteConfidence: "Verified",
           sourceProvider: "foursquare",
-          sourceUrl: `https://foursquare.com/v/${place.fsq_id}`,
+          sources: ["foursquare"],
+          provenance: [{ source: "foursquare", sourceUrl, retrievedAt: new Date() }],
+          sourceUrl,
           sourceType: "business_directory",
           providerPlaceId: place.fsq_id,
           status: "NEW",
           estimatedValue: 1500,
           notes: null,
           tags: "fsq-verified-lead",
-          dataQualityScore: 0.90,
+          dataQualityScore: phoneValidation.isValid ? 0.90 : 0.70,
           verificationStatus: "SOURCE_LISTED",
           retrievedAt: new Date(),
           lastVerifiedAt: new Date(),

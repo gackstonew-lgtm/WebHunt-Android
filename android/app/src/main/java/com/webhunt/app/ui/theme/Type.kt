@@ -11,71 +11,61 @@ val WebHuntTypography = Typography(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Bold,
         fontSize = 24.sp,
-        lineHeight = 32.sp,
-        color = WebHuntPaper
+        lineHeight = 32.sp
     ),
     headlineMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Bold,
         fontSize = 20.sp,
-        lineHeight = 28.sp,
-        color = WebHuntPaper
+        lineHeight = 28.sp
     ),
     titleLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Bold,
         fontSize = 17.sp,
-        lineHeight = 24.sp,
-        color = WebHuntPaper
+        lineHeight = 24.sp
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 15.sp,
-        lineHeight = 22.sp,
-        color = WebHuntPaper
+        lineHeight = 22.sp
     ),
     bodyLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
-        lineHeight = 20.sp,
-        color = WebHuntPaper
+        lineHeight = 20.sp
     ),
     bodyMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Normal,
         fontSize = 13.sp,
-        lineHeight = 18.sp,
-        color = WebHuntMuted
+        lineHeight = 18.sp
     ),
     bodySmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Normal,
         fontSize = 11.sp,
-        lineHeight = 16.sp,
-        color = WebHuntMuted
+        lineHeight = 16.sp
     ),
     labelLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 13.sp,
-        lineHeight = 18.sp,
-        color = WebHuntPaper
+        lineHeight = 18.sp
     ),
     labelMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
-        lineHeight = 16.sp,
-        color = WebHuntMuted
+        lineHeight = 16.sp
     ),
     labelSmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Bold,
         fontSize = 9.sp,
         lineHeight = 12.sp,
-        letterSpacing = 0.5.sp,
-        color = WebHuntMuted
+        letterSpacing = 0.5.sp
     )
 )

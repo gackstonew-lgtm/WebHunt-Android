@@ -53,6 +53,16 @@ import com.webhunt.app.ui.theme.WebHuntRoyal
 import com.webhunt.app.ui.theme.WebHuntSurface
 import com.webhunt.app.util.IntentUtils
 
+import com.webhunt.app.ui.theme.WebHuntRed
+import com.webhunt.app.ui.theme.WebHuntRedDark
+
+private data class StatusPillStyle(
+    val label: String,
+    val background: androidx.compose.ui.graphics.Color,
+    val border: androidx.compose.ui.graphics.Color,
+    val text: androidx.compose.ui.graphics.Color
+)
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PhysicalLeadCard(
@@ -63,7 +73,7 @@ fun PhysicalLeadCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val hasValidPhone = lead.phone.isNotBlank() && lead.phoneFormatted != "Phone unavailable"
+    val hasValidPhone = lead.isPhoneAvailable
 
     Box(
         modifier = modifier
@@ -89,33 +99,71 @@ fun PhysicalLeadCard(
                         lineHeight = 20.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(WebHuntSurface)
-                            .border(1.dp, WebHuntBorderSubtle, RoundedCornerShape(6.dp))
-                            .padding(horizontal = 7.dp, vertical = 2.dp)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = lead.category ?: "Local Business",
-                            color = WebHuntMuted,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(WebHuntSurface)
+                                .border(1.dp, WebHuntBorderSubtle, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 7.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = lead.category ?: "Local Business",
+                                color = WebHuntMuted,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        // Multi-Source / Provider attribution
+                        val sourceLabel = if (lead.sources.size > 1) {
+                            "${lead.sources.size} Sources"
+                        } else {
+                            lead.sourceProvider.uppercase()
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(WebHuntHover)
+                                .border(1.dp, WebHuntBorderSubtle, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = sourceLabel,
+                                color = WebHuntMuted,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 
-                // Website status pill
+                // Website Opportunity Engine status pill
+                val style = when (lead.websiteStatus?.uppercase()) {
+                    "NO_WEBSITE" -> StatusPillStyle("No Website", WebHuntEmeraldTint, WebHuntEmerald.copy(alpha = 0.3f), WebHuntEmerald)
+                    "SOCIAL_ONLY" -> StatusPillStyle("Social Only", WebHuntHover, WebHuntRoyal.copy(alpha = 0.3f), WebHuntRoyal)
+                    "BROKEN_WEBSITE" -> StatusPillStyle("Broken Link", WebHuntRedDark, WebHuntRed.copy(alpha = 0.3f), WebHuntRed)
+                    "WEBSITE_FOUND" -> StatusPillStyle("Website Found", WebHuntHover, WebHuntBorder, WebHuntMuted)
+                    else -> if (lead.hasWebsite) {
+                        StatusPillStyle("Website Found", WebHuntHover, WebHuntBorder, WebHuntMuted)
+                    } else {
+                        StatusPillStyle("No Website (${lead.noWebsiteConfidence ?: "High"})", WebHuntEmeraldTint, WebHuntEmerald.copy(alpha = 0.3f), WebHuntEmerald)
+                    }
+                }
+
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (lead.hasWebsite) WebHuntHover else WebHuntEmeraldTint)
-                        .border(1.dp, if (lead.hasWebsite) WebHuntBorder else WebHuntEmerald.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                        .background(style.background)
+                        .border(1.dp, style.border, RoundedCornerShape(8.dp))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = if (lead.hasWebsite) "Has Website" else "No Website (${lead.noWebsiteConfidence ?: "High"})",
-                        color = if (lead.hasWebsite) WebHuntMuted else WebHuntEmerald,
+                        text = style.label,
+                        color = style.text,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -171,7 +219,7 @@ fun PhysicalLeadCard(
                 }
             } else {
                 Text(
-                    text = "Phone unavailable on source record",
+                    text = "Phone unavailable",
                     color = WebHuntMuted.copy(alpha = 0.5f),
                     fontFamily = FontFamily.Monospace,
                     fontSize = 11.sp
@@ -353,28 +401,50 @@ fun PhysicalLeadCard(
                     )
                 }
 
-                if (lead.rating != null && lead.rating > 0.0) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Rating",
-                            tint = WebHuntGold,
-                            modifier = Modifier.size(13.dp)
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Text(
-                            text = String.format("%.1f", lead.rating),
-                            color = WebHuntPaper,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp
-                        )
-                        lead.reviewCount?.let { count ->
-                            if (count > 0) {
-                                Text(
-                                    text = " ($count)",
-                                    color = WebHuntMuted,
-                                    fontSize = 10.sp
-                                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    lead.contactQualityScore?.let { score ->
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(WebHuntHover)
+                                .border(1.dp, WebHuntBorderSubtle, RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "${score.toInt()}% Quality",
+                                color = if (score >= 70.0) WebHuntEmerald else WebHuntMuted,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    if (lead.rating != null && lead.rating > 0.0) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = "Rating",
+                                tint = WebHuntGold,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Text(
+                                text = String.format("%.1f", lead.rating),
+                                color = WebHuntPaper,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp
+                            )
+                            lead.reviewCount?.let { count ->
+                                if (count > 0) {
+                                    Text(
+                                        text = " ($count)",
+                                        color = WebHuntMuted,
+                                        fontSize = 10.sp
+                                    )
+                                }
                             }
                         }
                     }

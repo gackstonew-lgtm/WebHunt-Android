@@ -37,12 +37,22 @@ function SubscriptionContent() {
   const returnTo = searchParams.get("returnTo") || "";
   const paymentStatus = searchParams.get("payment");
   const refParam = searchParams.get("ref");
+  const planParam = searchParams.get("plan");
+  const currencyParam = searchParams.get("currency");
 
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [userSession, setUserSession] = useState<any | null>(null);
   const [subStatus, setSubStatus] = useState<SubscriptionStatusResult | null>(null);
-  const [selectedPlanId, setSelectedPlanId] = useState<string>("annual");
-  const [currency, setCurrency] = useState<"USD" | "KES" | "NGN">("USD");
+  const [selectedPlanId, setSelectedPlanId] = useState<string>(
+    planParam === "monthly" || planParam === "annual" ? planParam : "annual"
+  );
+  const [currency, setCurrency] = useState<"USD" | "KES" | "NGN">(
+    currencyParam?.toUpperCase() === "KES"
+      ? "KES"
+      : currencyParam?.toUpperCase() === "NGN"
+      ? "NGN"
+      : "USD"
+  );
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -77,6 +87,21 @@ function SubscriptionContent() {
   useEffect(() => {
     fetchStatus();
   }, []);
+
+  useEffect(() => {
+    if (planParam === "monthly" || planParam === "annual") {
+      setSelectedPlanId(planParam);
+    }
+  }, [planParam]);
+
+  useEffect(() => {
+    if (currencyParam) {
+      const upper = currencyParam.toUpperCase();
+      if (upper === "KES" || upper === "USD" || upper === "NGN") {
+        setCurrency(upper as any);
+      }
+    }
+  }, [currencyParam]);
 
   // Handle auto-verification if redirected with payment=success
   useEffect(() => {

@@ -40,43 +40,30 @@ export interface UserProfileData {
   mpesaPaybillNumber?: string;
 }
 
-const DEFAULT_PROFILE: UserProfileData = {
-  fullName: "Gackstone Baraka",
-  professionalTitle: "Full-Stack Software Engineer & Solutions Architect",
-  bio: "Experienced full-stack engineer building production-grade web applications, high-converting digital portals, and automated business workflows.",
-  yearsExperience: 4,
-  skills: [
-    "Next.js",
-    "React",
-    "TypeScript",
-    "Node.js",
-    "Tailwind CSS",
-    "PostgreSQL",
-    "Prisma",
-    "REST APIs",
-    "Python",
-    "E-commerce",
-    "M-Pesa Integrations",
-    "Tailored Portals",
-  ],
-  portfolioUrl: "https://portfolio.quantumcode.co.ke",
-  githubUrl: "https://github.com",
-  linkedinUrl: "https://linkedin.com",
+const EMPTY_PROFILE: UserProfileData = {
+  fullName: "",
+  professionalTitle: "",
+  bio: "",
+  yearsExperience: 0,
+  skills: [],
+  portfolioUrl: "",
+  githubUrl: "",
+  linkedinUrl: "",
   resumeUrl: "",
-  hourlyRateUsd: 50,
-  hourlyRateKes: 6500,
-  projectRateUsd: 1500,
-  projectRateKes: 180000,
+  hourlyRateUsd: 0,
+  hourlyRateKes: 0,
+  projectRateUsd: 0,
+  projectRateKes: 0,
   currency: "USD",
-  timezone: "Africa/Nairobi (EAT, UTC+3)",
-  languages: ["English (Fluent)", "Swahili (Native)"],
-  phone: "+254700000000",
-  whatsapp: "+254700000000",
-  email: "contact@example.com",
-  city: "Nairobi",
-  country: "Kenya",
-  mpesaTillNumber: "987654",
-  mpesaPaybillNumber: "400200",
+  timezone: "Africa/Nairobi",
+  languages: ["English"],
+  phone: "",
+  whatsapp: "",
+  email: "",
+  city: "",
+  country: "",
+  mpesaTillNumber: "",
+  mpesaPaybillNumber: "",
 };
 
 export async function getUserProfileAction(userId?: string): Promise<{
@@ -93,8 +80,21 @@ export async function getUserProfileAction(userId?: string): Promise<{
 
     if (!targetUserId) {
       return {
-        success: true,
-        data: DEFAULT_PROFILE,
+        success: false,
+        data: EMPTY_PROFILE,
+        error: "Authentication required",
+      };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: targetUserId },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        data: EMPTY_PROFILE,
+        error: "User not found",
       };
     }
 
@@ -103,43 +103,32 @@ export async function getUserProfileAction(userId?: string): Promise<{
     });
 
     if (!profile) {
-      const user = await prisma.user.findUnique({
-        where: { id: targetUserId },
-      });
-
-      if (!user) {
-        return {
-          success: true,
-          data: DEFAULT_PROFILE,
-        };
-      }
-
       profile = await prisma.userProfile.create({
         data: {
           userId: user.id,
-          fullName: user.name || DEFAULT_PROFILE.fullName,
-          professionalTitle: DEFAULT_PROFILE.professionalTitle,
-          bio: DEFAULT_PROFILE.bio,
-          yearsExperience: DEFAULT_PROFILE.yearsExperience,
-          skillsJson: JSON.stringify(DEFAULT_PROFILE.skills),
-          portfolioUrl: DEFAULT_PROFILE.portfolioUrl,
-          githubUrl: DEFAULT_PROFILE.githubUrl,
-          linkedinUrl: DEFAULT_PROFILE.linkedinUrl,
-          resumeUrl: DEFAULT_PROFILE.resumeUrl,
-          hourlyRateUsd: DEFAULT_PROFILE.hourlyRateUsd,
-          hourlyRateKes: DEFAULT_PROFILE.hourlyRateKes,
-          projectRateUsd: DEFAULT_PROFILE.projectRateUsd,
-          projectRateKes: DEFAULT_PROFILE.projectRateKes,
-          currency: DEFAULT_PROFILE.currency || "USD",
-          timezone: DEFAULT_PROFILE.timezone || "Africa/Nairobi",
-          languagesJson: JSON.stringify(DEFAULT_PROFILE.languages),
-          phone: DEFAULT_PROFILE.phone,
-          whatsapp: DEFAULT_PROFILE.whatsapp,
-          email: user.email || DEFAULT_PROFILE.email,
-          city: DEFAULT_PROFILE.city,
-          country: DEFAULT_PROFILE.country,
-          mpesaTillNumber: DEFAULT_PROFILE.mpesaTillNumber,
-          mpesaPaybillNumber: DEFAULT_PROFILE.mpesaPaybillNumber,
+          fullName: user.name || user.email.split("@")[0] || "",
+          professionalTitle: "",
+          bio: "",
+          yearsExperience: 0,
+          skillsJson: JSON.stringify([]),
+          portfolioUrl: "",
+          githubUrl: "",
+          linkedinUrl: "",
+          resumeUrl: "",
+          hourlyRateUsd: 0,
+          hourlyRateKes: 0,
+          projectRateUsd: 0,
+          projectRateKes: 0,
+          currency: "USD",
+          timezone: "Africa/Nairobi",
+          languagesJson: JSON.stringify(["English"]),
+          phone: "",
+          whatsapp: "",
+          email: user.email,
+          city: "",
+          country: "",
+          mpesaTillNumber: "",
+          mpesaPaybillNumber: "",
         },
       });
     }
@@ -148,14 +137,14 @@ export async function getUserProfileAction(userId?: string): Promise<{
     try {
       skills = JSON.parse(profile.skillsJson);
     } catch (_) {
-      skills = DEFAULT_PROFILE.skills;
+      skills = [];
     }
 
     let languages: string[] = [];
     try {
-      languages = profile.languagesJson ? JSON.parse(profile.languagesJson) : DEFAULT_PROFILE.languages;
+      languages = profile.languagesJson ? JSON.parse(profile.languagesJson) : ["English"];
     } catch (_) {
-      languages = DEFAULT_PROFILE.languages || [];
+      languages = ["English"];
     }
 
     return {
@@ -166,24 +155,24 @@ export async function getUserProfileAction(userId?: string): Promise<{
         fullName: profile.fullName,
         professionalTitle: profile.professionalTitle,
         bio: profile.bio || "",
-        yearsExperience: profile.yearsExperience || 3,
+        yearsExperience: profile.yearsExperience || 0,
         skills,
         portfolioUrl: profile.portfolioUrl || "",
         githubUrl: profile.githubUrl || "",
         linkedinUrl: profile.linkedinUrl || "",
         resumeUrl: profile.resumeUrl || "",
-        hourlyRateUsd: profile.hourlyRateUsd || 45,
-        hourlyRateKes: profile.hourlyRateKes || 5500,
-        projectRateUsd: profile.projectRateUsd || 1500,
-        projectRateKes: profile.projectRateKes || 180000,
+        hourlyRateUsd: profile.hourlyRateUsd || 0,
+        hourlyRateKes: profile.hourlyRateKes || 0,
+        projectRateUsd: profile.projectRateUsd || 0,
+        projectRateKes: profile.projectRateKes || 0,
         currency: (profile.currency as any) || "USD",
         timezone: profile.timezone || "Africa/Nairobi",
         languages,
         phone: profile.phone || "",
         whatsapp: profile.whatsapp || "",
-        email: profile.email || "",
-        city: profile.city || "Nairobi",
-        country: profile.country || "Kenya",
+        email: profile.email || user.email || "",
+        city: profile.city || "",
+        country: profile.country || "",
         mpesaTillNumber: profile.mpesaTillNumber || "",
         mpesaPaybillNumber: profile.mpesaPaybillNumber || "",
       },
@@ -192,7 +181,7 @@ export async function getUserProfileAction(userId?: string): Promise<{
     console.error("[ProfileAction] Fetch error:", error);
     return {
       success: false,
-      data: DEFAULT_PROFILE,
+      data: EMPTY_PROFILE,
       error: error.message,
     };
   }
@@ -214,15 +203,7 @@ export async function saveUserProfileAction(
     }
 
     if (!targetUserId) {
-      if (process.env.NODE_ENV === "production") {
-        return { success: false, error: "Authentication required to save profile" };
-      }
-      // Dev mode fallback
-      const user = await prisma.user.findFirst();
-      if (!user) {
-        return { success: false, error: "User record required to attach profile" };
-      }
-      targetUserId = user.id;
+      return { success: false, error: "Authentication required to save profile" };
     }
 
     const saved = await prisma.userProfile.upsert({
@@ -232,24 +213,24 @@ export async function saveUserProfileAction(
         fullName: data.fullName,
         professionalTitle: data.professionalTitle,
         bio: data.bio || null,
-        yearsExperience: data.yearsExperience || 3,
+        yearsExperience: data.yearsExperience ?? 0,
         skillsJson: JSON.stringify(data.skills || []),
         portfolioUrl: data.portfolioUrl || null,
         githubUrl: data.githubUrl || null,
         linkedinUrl: data.linkedinUrl || null,
         resumeUrl: data.resumeUrl || null,
-        hourlyRateUsd: data.hourlyRateUsd || 45,
-        hourlyRateKes: data.hourlyRateKes || 5500,
-        projectRateUsd: data.projectRateUsd || 1500,
-        projectRateKes: data.projectRateKes || 180000,
+        hourlyRateUsd: data.hourlyRateUsd ?? null,
+        hourlyRateKes: data.hourlyRateKes ?? null,
+        projectRateUsd: data.projectRateUsd ?? null,
+        projectRateKes: data.projectRateKes ?? null,
         currency: data.currency || "USD",
         timezone: data.timezone || "Africa/Nairobi",
         languagesJson: JSON.stringify(data.languages || []),
         phone: data.phone || null,
         whatsapp: data.whatsapp || null,
         email: data.email || null,
-        city: data.city || "Nairobi",
-        country: data.country || "Kenya",
+        city: data.city || null,
+        country: data.country || null,
         mpesaTillNumber: data.mpesaTillNumber || null,
         mpesaPaybillNumber: data.mpesaPaybillNumber || null,
       },
@@ -257,24 +238,24 @@ export async function saveUserProfileAction(
         fullName: data.fullName,
         professionalTitle: data.professionalTitle,
         bio: data.bio || null,
-        yearsExperience: data.yearsExperience || 3,
+        yearsExperience: data.yearsExperience ?? 0,
         skillsJson: JSON.stringify(data.skills || []),
         portfolioUrl: data.portfolioUrl || null,
         githubUrl: data.githubUrl || null,
         linkedinUrl: data.linkedinUrl || null,
         resumeUrl: data.resumeUrl || null,
-        hourlyRateUsd: data.hourlyRateUsd || 45,
-        hourlyRateKes: data.hourlyRateKes || 5500,
-        projectRateUsd: data.projectRateUsd || 1500,
-        projectRateKes: data.projectRateKes || 180000,
+        hourlyRateUsd: data.hourlyRateUsd ?? null,
+        hourlyRateKes: data.hourlyRateKes ?? null,
+        projectRateUsd: data.projectRateUsd ?? null,
+        projectRateKes: data.projectRateKes ?? null,
         currency: data.currency || "USD",
         timezone: data.timezone || "Africa/Nairobi",
         languagesJson: JSON.stringify(data.languages || []),
         phone: data.phone || null,
         whatsapp: data.whatsapp || null,
         email: data.email || null,
-        city: data.city || "Nairobi",
-        country: data.country || "Kenya",
+        city: data.city || null,
+        country: data.country || null,
         mpesaTillNumber: data.mpesaTillNumber || null,
         mpesaPaybillNumber: data.mpesaPaybillNumber || null,
       },

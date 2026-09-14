@@ -21,7 +21,8 @@ data class ProfileUiState(
 
 class ProfileViewModel(
     private val profileRepo: ProfileRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val authRepo: com.webhunt.app.data.repository.AuthRepository? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -30,17 +31,44 @@ class ProfileViewModel(
     val themeMode: StateFlow<AppThemeMode> = sessionManager.themeMode
 
     init {
+        viewModelScope.launch {
+            profileRepo.profile.collect { repoProfile ->
+                val currentUser = sessionManager.getUser()
+                val effectiveProfile = if (currentUser != null) {
+                    repoProfile.copy(
+                        fullName = repoProfile.fullName.ifBlank { currentUser.name ?: "" },
+                        email = repoProfile.email ?: currentUser.email
+                    )
+                } else {
+                    repoProfile
+                }
+                _uiState.value = _uiState.value.copy(profile = effectiveProfile)
+            }
+        }
         loadProfile()
     }
 
     fun loadProfile() {
+        val currentUser = sessionManager.getUser()
+        if (currentUser == null) {
+            _uiState.value = ProfileUiState()
+            return
+        }
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
         viewModelScope.launch {
             val res = profileRepo.fetchProfile()
-            res.onSuccess {
-                _uiState.value = _uiState.value.copy(profile = it, isLoading = false)
+            res.onSuccess { data ->
+                val effective = data.copy(
+                    fullName = data.fullName.ifBlank { currentUser.name ?: "" },
+                    email = data.email ?: currentUser.email
+                )
+                _uiState.value = _uiState.value.copy(profile = effective, isLoading = false)
             }.onFailure {
-                _uiState.value = _uiState.value.copy(isLoading = false, errorMessage = it.message)
+                val fallback = _uiState.value.profile.copy(
+                    fullName = _uiState.value.profile.fullName.ifBlank { currentUser.name ?: "" },
+                    email = _uiState.value.profile.email ?: currentUser.email
+                )
+                _uiState.value = _uiState.value.copy(profile = fallback, isLoading = false, errorMessage = it.message)
             }
         }
     }
@@ -50,7 +78,15 @@ class ProfileViewModel(
     }
 
     fun logout() {
-        sessionManager.clearSession()
+        viewModelScope.launch {
+            try {
+                authRepo?.logout() ?: sessionManager.clearSession()
+            } catch (_: Exception) {
+                sessionManager.clearSession()
+            }
+            profileRepo.clear()
+            _uiState.value = ProfileUiState()
+        }
     }
 
     fun updateField(block: (UserProfileData) -> UserProfileData) {

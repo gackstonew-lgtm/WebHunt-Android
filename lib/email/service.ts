@@ -248,12 +248,12 @@ export async function sendVerificationOtpEmail(
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
-                    <span style="font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #F8F3F0;">
-                      <span style="color: #0048BB;">⚡</span> WebHunt
+                    <span style="font-size: 18px; font-weight: 700; letter-spacing: -0.5px; color: #EEEEEE;">
+                      WebHunt
                     </span>
                   </td>
                   <td align="right">
-                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888888; background-color: #161616; padding: 4px 8px; border-radius: 4px; border: 1px solid #262626;">
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #989BA3; background-color: #161616; padding: 4px 8px; border-radius: 4px; border: 1px solid #262626;">
                       Security Verification
                     </span>
                   </td>
@@ -265,11 +265,11 @@ export async function sendVerificationOtpEmail(
           <!-- Message Body -->
           <tr>
             <td style="padding-top: 28px; padding-bottom: 16px;">
-              <h1 style="font-size: 22px; font-weight: 700; color: #FFFFFF; margin: 0 0 12px 0; letter-spacing: -0.3px;">
+              <h1 style="font-size: 20px; font-weight: 700; color: #EEEEEE; margin: 0 0 12px 0; letter-spacing: -0.3px;">
                 Verify Your Account
               </h1>
-              <p style="font-size: 14px; line-height: 22px; color: #AAAAAA; margin: 0 0 24px 0;">
-                Hello <strong style="color: #F8F3F0;">${userName}</strong>, welcome to WebHunt. Use the 6-digit verification code below to activate your account and access the lead discovery radar.
+              <p style="font-size: 14px; line-height: 22px; color: #989BA3; margin: 0 0 24px 0;">
+                Hello <strong style="color: #EEEEEE;">${userName}</strong>, welcome to WebHunt. Use the 6-digit verification code below to activate your account and access the lead discovery radar.
               </p>
             </td>
           </tr>
@@ -277,13 +277,13 @@ export async function sendVerificationOtpEmail(
           <!-- OTP Display Box -->
           <tr>
             <td align="center" style="padding: 12px 0 28px 0;">
-              <div style="background-color: #141414; border: 2px dashed #0048BB; border-radius: 10px; padding: 20px 24px; display: inline-block;">
-                <span style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 800; letter-spacing: 12px; color: #FFFFFF; text-shadow: 0 0 12px rgba(0, 72, 187, 0.4);">
+              <div style="background-color: #111214; border: 1px solid #262626; border-radius: 10px; padding: 20px 24px; display: inline-block;">
+                <span style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 800; letter-spacing: 12px; color: #EEEEEE;">
                   ${otp}
                 </span>
               </div>
-              <p style="font-size: 12px; color: #888888; margin: 12px 0 0 0;">
-                ⏱️ This code expires in <strong>10 minutes</strong>. Single-use only.
+              <p style="font-size: 12px; color: #989BA3; margin: 12px 0 0 0;">
+                This code expires in <strong>10 minutes</strong>. Single-use only.
               </p>
             </td>
           </tr>
@@ -292,11 +292,11 @@ export async function sendVerificationOtpEmail(
           <tr>
             <td style="border-top: 1px solid #1C1C1C; padding-top: 20px;">
               <p style="font-size: 12px; line-height: 18px; color: #777777; margin: 0 0 16px 0;">
-                🔒 If you did not create a WebHunt account, you can safely ignore this email. Never share your verification code with anyone.
+                If you did not create a WebHunt account, you can safely ignore this email. Never share your verification code with anyone.
               </p>
               <p style="font-size: 12px; line-height: 18px; color: #777777; margin: 0;">
                 WebHunt &bull; Global Tech & Local Business Outreach Workspace<br>
-                <a href="${appUrl}" style="color: #0048BB; text-decoration: none;">${appUrl}</a>
+                <a href="${appUrl}" style="color: #EEEEEE; text-decoration: underline;">${appUrl}</a>
               </p>
             </td>
           </tr>
@@ -361,25 +361,25 @@ export async function sendPasswordResetEmail(
         <table role="presentation" width="100%" style="max-width: 540px; background-color: #0D0D0D; border: 1px solid #222222; border-radius: 12px; overflow: hidden; padding: 32px 28px;">
           <tr>
             <td style="padding-bottom: 24px; border-bottom: 1px solid #1C1C1C;">
-              <span style="font-size: 20px; font-weight: 800; color: #F8F3F0;">
-                <span style="color: #0048BB;">⚡</span> WebHunt
+              <span style="font-size: 18px; font-weight: 700; color: #EEEEEE;">
+                WebHunt
               </span>
             </td>
           </tr>
           <tr>
             <td style="padding-top: 28px; padding-bottom: 20px;">
-              <h1 style="font-size: 22px; font-weight: 700; color: #FFFFFF; margin: 0 0 12px 0;">
+              <h1 style="font-size: 20px; font-weight: 700; color: #EEEEEE; margin: 0 0 12px 0;">
                 Password Reset Request
               </h1>
-              <p style="font-size: 14px; line-height: 22px; color: #AAAAAA; margin: 0 0 24px 0;">
-                Hello <strong style="color: #F8F3F0;">${userName}</strong>, we received a request to reset your password. Click below to set a new password:
+              <p style="font-size: 14px; line-height: 22px; color: #989BA3; margin: 0 0 24px 0;">
+                Hello <strong style="color: #EEEEEE;">${userName}</strong>, we received a request to reset your password. Click below to set a new password:
               </p>
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${resetLink}" style="background-color: #0048BB; color: #FFFFFF; text-decoration: none; padding: 13px 28px; border-radius: 8px; font-weight: 600; font-size: 14px; display: inline-block;">
+                <a href="${resetLink}" style="background-color: #FFFFFF; color: #000000; text-decoration: none; padding: 12px 26px; border-radius: 8px; font-weight: 600; font-size: 14px; display: inline-block;">
                   Reset My Password
                 </a>
               </div>
-              <p style="font-size: 12px; color: #888888;">
+              <p style="font-size: 12px; color: #777777;">
                 This link will expire in <strong>1 hour</strong> and is single-use. If you did not make this request, you can safely ignore this email.
               </p>
             </td>
@@ -432,10 +432,10 @@ export async function sendVerificationEmail(
 <!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"></head>
-<body style="background-color: #000000; font-family: sans-serif; color: #F8F3F0; padding: 30px;">
+<body style="background-color: #000000; font-family: sans-serif; color: #EEEEEE; padding: 30px;">
   <h2>Verify your WebHunt account</h2>
   <p>Hello ${userName}, please click below to verify your account:</p>
-  <p><a href="${verifyLink}" style="background-color: #0048BB; color: #fff; padding: 10px 20px; border-radius: 6px; text-decoration: none;">Verify Email Address</a></p>
+  <p><a href="${verifyLink}" style="background-color: #FFFFFF; color: #000000; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">Verify Email Address</a></p>
 </body>
 </html>
   `.trim();

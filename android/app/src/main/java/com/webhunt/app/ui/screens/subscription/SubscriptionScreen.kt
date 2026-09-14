@@ -194,10 +194,11 @@ fun SubscriptionScreen(
         // Plan Cards
         items(plans) { plan ->
             val isSelected = plan.id == state.selectedPlanId
+            val amount = if (state.currency == "KES") plan.displayAmountKes else plan.displayAmountUsd
             val priceStr = if (state.currency == "KES") {
-                "KES ${plan.amountKes.toLong()}"
+                "KES ${amount.toLong()}"
             } else {
-                "$${plan.amountUsd.toLong()}"
+                "$${amount.toLong()}"
             }
 
             Box(
@@ -220,15 +221,16 @@ fun SubscriptionScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
+                            val intervalLabel = if (plan.interval.startsWith("year") || plan.interval.startsWith("annual")) "year" else "month"
                             Text(text = plan.name, color = WebHuntPaper, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text(text = "/${plan.interval}", color = WebHuntMuted, fontSize = 11.sp)
+                            Text(text = "/$intervalLabel", color = WebHuntMuted, fontSize = 11.sp)
                         }
 
                         Text(text = priceStr, color = WebHuntEmerald, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     }
 
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text(text = plan.description, color = WebHuntMuted, fontSize = 11.sp, lineHeight = 16.sp)
+                    Text(text = plan.displayTagline, color = WebHuntMuted, fontSize = 11.sp, lineHeight = 16.sp)
 
                     Spacer(modifier = Modifier.height(14.dp))
 

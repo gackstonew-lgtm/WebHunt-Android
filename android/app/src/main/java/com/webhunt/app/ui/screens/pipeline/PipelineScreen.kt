@@ -406,11 +406,21 @@ fun PipelineScreen(
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.clickable { IntentUtils.dialPhoneNumber(context, lead.phone) }
+                                    modifier = if (lead.isPhoneAvailable) Modifier.clickable { IntentUtils.dialPhoneNumber(context, lead.phone) } else Modifier
                                 ) {
-                                    Icon(imageVector = Icons.Default.Phone, contentDescription = null, tint = WebHuntEmerald, modifier = Modifier.size(13.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.Phone,
+                                        contentDescription = null,
+                                        tint = if (lead.isPhoneAvailable) WebHuntEmerald else WebHuntMuted.copy(alpha = 0.5f),
+                                        modifier = Modifier.size(13.dp)
+                                    )
                                     Spacer(modifier = Modifier.width(5.dp))
-                                    Text(text = lead.phoneFormatted ?: lead.phone, color = WebHuntPaper, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+                                    Text(
+                                        text = lead.displayPhone,
+                                        color = if (lead.isPhoneAvailable) WebHuntPaper else WebHuntMuted.copy(alpha = 0.5f),
+                                        fontFamily = FontFamily.Monospace,
+                                        fontSize = 12.sp
+                                    )
                                 }
 
                                 Text(
@@ -461,7 +471,7 @@ fun PipelineScreen(
                                 }
 
                                 // Quick WhatsApp
-                                val targetWa = lead.whatsapp ?: if (lead.phone.isNotBlank()) lead.phone else null
+                                val targetWa = lead.whatsapp ?: if (lead.isPhoneAvailable) lead.phone else null
                                 if (!targetWa.isNullOrBlank()) {
                                     Box(
                                         modifier = Modifier
@@ -591,7 +601,7 @@ fun PipelineScreen(
                                         .clip(RoundedCornerShape(10.dp))
                                         .background(WebHuntSurface)
                                         .border(1.dp, WebHuntBorder, RoundedCornerShape(10.dp))
-                                        .clickable { IntentUtils.openBrowser(context, job.url) },
+                                        .clickable { IntentUtils.openBrowser(context, job.displayApplicationUrl) },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(imageVector = Icons.Default.OpenInNew, contentDescription = "Apply", tint = WebHuntMuted, modifier = Modifier.size(16.dp))
@@ -607,7 +617,7 @@ fun PipelineScreen(
                                         .clickable {
                                             activeNotesTarget = ActiveNotesTarget(
                                                 leadId = job.id,
-                                                title = "${job.title} @ ${job.company}",
+                                                title = "${job.title} @ ${job.displayEmployer}",
                                                 status = job.status,
                                                 notes = job.notes ?: "",
                                                 value = job.estimatedValue

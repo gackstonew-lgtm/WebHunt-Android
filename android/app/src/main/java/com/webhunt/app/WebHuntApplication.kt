@@ -47,12 +47,21 @@ class WebHuntApplication : Application() {
         searchHistoryManager = com.webhunt.app.data.storage.SearchHistoryManager(this)
         networkModule = NetworkModule(this, sessionManager)
 
-        authRepository = AuthRepository(networkModule.apiService, sessionManager)
         searchRepository = SearchRepository(networkModule.apiService)
         pipelineRepository = PipelineRepository(networkModule.apiService)
         taxonomyRepository = TaxonomyRepository(this, networkModule.apiService)
         profileRepository = ProfileRepository(networkModule.apiService)
         subscriptionRepository = SubscriptionRepository(networkModule.apiService)
+
+        authRepository = AuthRepository(
+            networkModule.apiService,
+            sessionManager,
+            onClearData = {
+                pipelineRepository.clear()
+                profileRepository.clear()
+                subscriptionRepository.clear()
+            }
+        )
     }
 
     companion object {

@@ -67,12 +67,38 @@ class PipelineRepository(private val api: WebHuntApiService) {
                             try {
                                 val item = json.decodeFromJsonElement<OnlineJobLead>(element)
                                 oList.add(item)
-                            } catch (_: Exception) {}
+                            } catch (e: Exception) {
+                                try {
+                                    val idVal = obj["id"]?.jsonPrimitive?.content ?: ""
+                                    val title = obj["title"]?.jsonPrimitive?.content ?: "Remote Opportunity"
+                                    val comp = obj["company"]?.jsonPrimitive?.content ?: "Remote Employer"
+                                    val loc = obj["location"]?.jsonPrimitive?.content ?: "Worldwide"
+                                    val u = obj["url"]?.jsonPrimitive?.content ?: ""
+                                    val st = obj["status"]?.jsonPrimitive?.content ?: "NEW"
+                                    oList.add(OnlineJobLead(id = idVal, title = title, company = comp, location = loc, url = u, status = st))
+                                } catch (_: Exception) {}
+                            }
                         } else {
                             try {
                                 val item = json.decodeFromJsonElement<PhysicalLead>(element)
-                                pList.add(item)
-                            } catch (_: Exception) {}
+                                val cleanItem = if (item.phone.startsWith("unlisted-") || item.phoneStatus == "unavailable") {
+                                    item.copy(phoneFormatted = "Phone unavailable", phoneStatus = "unavailable")
+                                } else item
+                                pList.add(cleanItem)
+                            } catch (e: Exception) {
+                                try {
+                                    val idVal = obj["id"]?.jsonPrimitive?.content ?: ""
+                                    val name = obj["businessName"]?.jsonPrimitive?.content ?: "Local Business"
+                                    val phone = obj["phone"]?.jsonPrimitive?.content ?: ""
+                                    val isUnlisted = phone.isBlank() || phone.startsWith("unlisted-")
+                                    val phoneFmt = if (isUnlisted) "Phone unavailable" else (obj["phoneFormatted"]?.jsonPrimitive?.content ?: phone)
+                                    val phoneStatus = if (isUnlisted) "unavailable" else (obj["phoneStatus"]?.jsonPrimitive?.content ?: "source_listed")
+                                    val city = obj["city"]?.jsonPrimitive?.content
+                                    val country = obj["country"]?.jsonPrimitive?.content ?: "Kenya"
+                                    val st = obj["status"]?.jsonPrimitive?.content ?: "NEW"
+                                    pList.add(PhysicalLead(id = idVal, businessName = name, phone = phone, phoneFormatted = phoneFmt, phoneStatus = phoneStatus, city = city, country = country, status = st))
+                                } catch (_: Exception) {}
+                            }
                         }
                     }
                 }
@@ -94,14 +120,21 @@ class PipelineRepository(private val api: WebHuntApiService) {
 
     suspend fun saveLead(lead: PhysicalLead): Result<Unit> {
         return try {
-            val element = json.encodeToJsonElement(lead)
+            val safeLead = if (lead.phone.isBlank() || lead.phone.startsWith("unlisted-")) {
+                lead.copy(
+                    phone = if (lead.phone.startsWith("unlisted-")) lead.phone else "unlisted-${lead.id}",
+                    phoneFormatted = "Phone unavailable",
+                    phoneStatus = "unavailable"
+                )
+            } else lead
+            val element = json.encodeToJsonElement(safeLead)
             val payload = buildJsonObject {
                 put("lead", element)
             }
             val response = api.savePipelineLead(payload)
             if (response.isSuccessful) {
-                _physicalLeads.value = listOf(lead) + _physicalLeads.value.filter { it.id != lead.id }
-                _savedLeadIds.value = _savedLeadIds.value + lead.id
+                _physicalLeads.value = listOf(safeLead) + _physicalLeads.value.filter { it.id != safeLead.id }
+                _savedLeadIds.value = _savedLeadIds.value + safeLead.id
                 calculateStats(_physicalLeads.value, _onlineLeads.value)
                 Result.success(Unit)
             } else {
@@ -134,14 +167,23 @@ class PipelineRepository(private val api: WebHuntApiService) {
 
     suspend fun bulkSavePhysical(leads: List<PhysicalLead>): Result<Unit> {
         return try {
-            val element = json.encodeToJsonElement(leads)
+            val safeLeads = leads.map { lead ->
+                if (lead.phone.isBlank() || lead.phone.startsWith("unlisted-")) {
+                    lead.copy(
+                        phone = if (lead.phone.startsWith("unlisted-")) lead.phone else "unlisted-${lead.id}",
+                        phoneFormatted = "Phone unavailable",
+                        phoneStatus = "unavailable"
+                    )
+                } else lead
+            }
+            val element = json.encodeToJsonElement(safeLeads)
             val payload = buildJsonObject {
                 put("leads", element)
             }
             val response = api.savePipelineLead(payload)
             if (response.isSuccessful) {
-                val newIds = leads.map { it.id }.toSet()
-                _physicalLeads.value = leads + _physicalLeads.value.filter { it.id !in newIds }
+                val newIds = safeLeads.map { it.id }.toSet()
+                _physicalLeads.value = safeLeads + _physicalLeads.value.filter { it.id !in newIds }
                 _savedLeadIds.value = _savedLeadIds.value + newIds
                 calculateStats(_physicalLeads.value, _onlineLeads.value)
                 Result.success(Unit)
@@ -232,5 +274,12 @@ class PipelineRepository(private val api: WebHuntApiService) {
             physicalCount = phys.size,
             onlineCount = onl.size
         )
+    }
+
+    fun clear() {
+        _physicalLeads.value = emptyList()
+        _onlineLeads.value = emptyList()
+        _savedLeadIds.value = emptySet()
+        _stats.value = PipelineStats()
     }
 }

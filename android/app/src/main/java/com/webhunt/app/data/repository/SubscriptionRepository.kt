@@ -33,34 +33,53 @@ class SubscriptionRepository(private val api: WebHuntApiService) {
         }
     }
 
+    fun clear() {
+        _subscriptionStatus.value = SubscriptionStatusResult()
+    }
+
     companion object {
         val DEFAULT_PLANS = listOf(
             PaymentPlan(
                 id = "monthly",
-                name = "Monthly Pro Radar",
+                name = "Monthly Access",
+                tagline = "Unrestricted physical & remote lead radar scans with CRM pipeline access",
+                priceUsd = 50.0,
+                priceKes = 6500.0,
                 amountUsd = 50.0,
                 amountKes = 6500.0,
-                interval = "month",
-                description = "Unlimited Lead Radar Scans, Full CRM & Outreach Access for 30 days.",
+                durationDays = 30,
+                interval = "monthly",
+                isPopular = false,
+                description = "Unrestricted physical & remote lead radar scans with CRM pipeline access",
                 features = listOf(
-                    "Unlimited Worldwide Physical & Remote Radar Scans",
-                    "Direct Business Phone Numbers, Emails & WhatsApp Discovery",
-                    "Unlimited In-Session Pipeline CRM & CSV Lead Exports",
-                    "Tailored Cold Pitch & Proposal Generators with 1-Click Copy"
+                    "Unlimited Local Lead Radar Scans (No-Website Businesses)",
+                    "Unlimited Remote Opportunity Scans (Tech, Writing, Design)",
+                    "Instant WhatsApp, Phone & Direct Contact Enrichment",
+                    "Full CRM Pipeline & Deal Tracking Workflow",
+                    "AI Pitch Script & Proposal Draft Generators",
+                    "Full CSV & Client Data Export",
+                    "30-Day Unrestricted Access"
                 )
             ),
             PaymentPlan(
                 id = "annual",
-                name = "Annual Radar Pass",
+                name = "Annual Pass",
+                tagline = "Maximum value: 1 full year of uncapped radar discovery & CRM automation",
+                priceUsd = 200.0,
+                priceKes = 26000.0,
                 amountUsd = 200.0,
                 amountKes = 26000.0,
-                interval = "year",
-                description = "Complete 365-day access with maximum savings for active freelancers & agencies.",
+                durationDays = 365,
+                interval = "annual",
+                isPopular = true,
+                description = "Maximum value: 1 full year of uncapped radar discovery & CRM automation",
                 features = listOf(
-                    "All Monthly Pro Radar Features for 12 Full Months",
-                    "Over 65% Annual Discount vs Monthly Billing",
-                    "Priority Radar Queue & Fast Parallel Aggregation",
-                    "Immediate Access to all Upcoming Provider Connectors"
+                    "Everything in Monthly Access Plan",
+                    "365 Days of Uncapped Radar Discovery Access",
+                    "Save over 66% compared to monthly billing",
+                    "Priority API Data Refresh & Worldwide Indexing",
+                    "Priority Customer & Engineering Support",
+                    "Multi-Seat Workspace & Collaboration Tools"
                 )
             )
         )

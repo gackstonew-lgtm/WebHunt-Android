@@ -72,7 +72,20 @@ fun WebHuntNavGraph(
 
         composable(NavDestination.Profile.route) {
             ProfileScreen(
-                viewModel = profileViewModel
+                viewModel = profileViewModel,
+                onNavigateToSubscription = {
+                    navController.navigate(NavDestination.Subscription.route)
+                },
+                onLogout = {
+                    navController.navigate(NavDestination.Auth.route) {
+                        popUpTo(NavDestination.Home.route) {
+                            inclusive = false
+                        }
+                    }
+                },
+                onBack = {
+                    navController.popBackStack()
+                }
             )
         }
 
@@ -80,7 +93,11 @@ fun WebHuntNavGraph(
             AuthScreen(
                 viewModel = authViewModel,
                 onAuthSuccess = {
-                    navController.popBackStack()
+                    if (!navController.popBackStack()) {
+                        navController.navigate(NavDestination.Home.route) {
+                            popUpTo(NavDestination.Home.route) { inclusive = true }
+                        }
+                    }
                 }
             )
         }

@@ -122,12 +122,11 @@ export async function registerAction(formData: {
         profile: {
           create: {
             fullName: name || email.split("@")[0],
-            professionalTitle: "Full-Stack Software Engineer & Solutions Architect",
-            skillsJson: JSON.stringify(["Next.js", "React", "TypeScript", "Node.js", "PostgreSQL", "Tailwind CSS"]),
+            professionalTitle: "",
+            skillsJson: JSON.stringify([]),
             currency: "USD",
             timezone: "Africa/Nairobi (EAT, UTC+3)",
-            city: "Nairobi",
-            country: "Kenya",
+            email: email,
           },
         },
       },

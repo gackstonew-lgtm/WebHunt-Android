@@ -25,6 +25,7 @@ class NetworkModule(context: Context, sessionManager: SessionManager) {
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
+        .addInterceptor(ResilienceInterceptor())
         .addInterceptor(AuthInterceptor(sessionManager))
         .apply {
             if (BuildConfig.DEBUG) {

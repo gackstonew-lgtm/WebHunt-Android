@@ -29,4 +29,21 @@ object Formatters {
             isoDate.take(10)
         }
     }
+
+    fun formatRelevanceScore(score: Double?): String? {
+        if (score == null) return null
+        val pct = if (score <= 1.0 && score > 0.0) {
+            (score * 100).toInt().coerceIn(0, 100)
+        } else {
+            score.toInt().coerceIn(0, 100)
+        }
+        return "$pct%"
+    }
+
+    fun formatPhoneDisplay(phone: String?, phoneFormatted: String?, phoneStatus: String?): String {
+        if (phone.isNullOrBlank() || phone.startsWith("unlisted-") || phoneStatus == "unavailable" || phoneFormatted == "Phone unavailable") {
+            return "Phone unavailable"
+        }
+        return phoneFormatted?.takeIf { it.isNotBlank() } ?: phone
+    }
 }

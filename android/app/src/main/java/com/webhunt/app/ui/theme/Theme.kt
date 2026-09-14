@@ -30,7 +30,12 @@ data class WebHuntThemeColors(
     val emerald: Color = WebHuntEmerald,
     val emeraldTint: Color = WebHuntEmeraldTint,
     val red: Color = WebHuntRed,
+    val redDark: Color = WebHuntRedDark,
     val gold: Color = WebHuntGold,
+    val royal: Color = WebHuntRoyal,
+    val royalHover: Color = WebHuntRoyalHover,
+    val royalTint: Color = WebHuntRoyalTint,
+    val blueBadge: Color = WebHuntBlueBadge,
     val isDark: Boolean = true
 )
 
@@ -45,6 +50,8 @@ val DarkThemeTokens = WebHuntThemeColors(
     borderSubtle = ArcadeBorderSubtleDark,
     primaryAction = ArcadePlatinum,
     onPrimaryAction = ArcadeObsidian,
+    redDark = WebHuntRedDark,
+    blueBadge = WebHuntBlueBadge,
     isDark = true
 )
 
@@ -58,7 +65,9 @@ val LightThemeTokens = WebHuntThemeColors(
     border = ArcadeBorderLight,
     borderSubtle = ArcadeBorderSubtleLight,
     primaryAction = ArcadeDarkSlate,
-    onPrimaryAction = ArcadeLightCard,
+    onPrimaryAction = Color.White,
+    redDark = Color(0xFFFEE2E2),
+    blueBadge = Color(0xFFE8EFFD),
     isDark = false
 )
 

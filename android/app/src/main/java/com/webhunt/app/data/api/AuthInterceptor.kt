@@ -17,6 +17,16 @@ class AuthInterceptor(private val sessionManager: SessionManager) : Interceptor 
             requestBuilder.header("Authorization", "Bearer $token")
         }
 
-        return chain.proceed(requestBuilder.build())
+        val response = chain.proceed(requestBuilder.build())
+
+        // Handle session expiration: if an authenticated request receives 401, clear local session
+        if (response.code == 401 && !token.isNullOrBlank()) {
+            val path = originalRequest.url.encodedPath
+            if (!path.contains("auth/login") && !path.contains("auth/register")) {
+                sessionManager.clearSession()
+            }
+        }
+
+        return response
     }
 }

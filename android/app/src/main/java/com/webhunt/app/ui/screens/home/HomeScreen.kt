@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
@@ -612,7 +613,7 @@ fun HomeScreen(
                                         .background(WebHuntHover)
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
-                                    Text(text = "Cached", color = WebHuntMuted, fontSize = 9.sp)
+                                    Text(text = if (result.staleCache) "Cached (Stale)" else "Cached", color = WebHuntMuted, fontSize = 9.sp)
                                 }
                             }
                         }
@@ -681,7 +682,10 @@ fun HomeScreen(
 
             // Results List
             if (result.mode == "physical") {
-                items(result.physicalLeads, key = { it.id }) { lead ->
+                itemsIndexed(
+                    items = result.physicalLeads,
+                    key = { index, lead -> if (lead.id.isNotBlank()) "${lead.id}_$index" else "phys_${index}_${lead.hashCode()}" }
+                ) { _, lead ->
                     PhysicalLeadCard(
                         lead = lead,
                         isSaved = savedIds.contains(lead.id),
@@ -690,7 +694,10 @@ fun HomeScreen(
                     )
                 }
             } else {
-                items(result.onlineLeads, key = { it.id }) { job ->
+                itemsIndexed(
+                    items = result.onlineLeads,
+                    key = { index, job -> if (job.id.isNotBlank()) "${job.id}_$index" else "job_${index}_${job.hashCode()}" }
+                ) { _, job ->
                     OnlineJobCard(
                         job = job,
                         isSaved = savedIds.contains(job.id),

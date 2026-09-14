@@ -1,5 +1,5 @@
 import { IPhysicalLeadProvider } from "./types";
-import { IOnlineJobProvider } from "./online/types";
+import { IOnlineJobProvider, ProviderExecutionResult } from "./online/types";
 import { OsmOverpassProvider } from "./osm-overpass";
 import { GooglePlacesProvider } from "./google-places";
 import { YelpFusionProvider } from "./yelp-fusion";
@@ -12,6 +12,13 @@ import { WeWorkRemotelyJobProvider } from "./online/weworkremotely";
 import { JobspressoJobProvider } from "./online/jobspresso";
 import { RemoteOkJobProvider } from "./online/remoteok";
 import { AfricaJobsProvider } from "./online/africa-jobs";
+import { AdzunaJobProvider } from "./online/adzuna";
+import { JoobleJobProvider } from "./online/jooble";
+import { UsaJobsProvider } from "./online/usajobs";
+import { AtsJobProvider } from "./online/ats-provider";
+import { AiPlatformsProvider } from "./online/ai-platforms";
+import { JobicyJobProvider } from "./online/jobicy";
+import { TheMuseJobProvider } from "./online/themuse";
 
 import { 
   LeadItem, 
@@ -20,43 +27,84 @@ import {
   PhysicalLead, 
   PhysicalSearchParams, 
   SearchParams, 
-  SearchResult 
+  SearchResult,
+  SearchDiagnostics
 } from "../types";
 import { deduplicatePhysicalLeads, deduplicateOnlineJobs } from "../deduplication";
+import { resolvePhysicalEntities } from "../deduplication/entity-resolution";
 import { normalizePhysicalSearchQuery, normalizeOnlineSearchQuery } from "../taxonomy/search-mapper";
+import { parseSearchIntent } from "../taxonomy/intent-parser";
 import { scorePhysicalLeadRelevance, scoreOnlineJobRelevance } from "../validation/relevance";
 import { enrichLeadsBatch } from "../enrichment";
-
-// In-Memory Fast Cache with TTL for production responsiveness
-const memoryCache = new Map<string, { data: SearchResult; expiresAt: number }>();
+import { durableCache } from "../cache/durable-cache";
+import { healthMonitor } from "./health-monitor";
 
 export class LeadProviderAggregator {
   private physicalProviders: Map<string, IPhysicalLeadProvider> = new Map();
   private onlineProviders: Map<string, IOnlineJobProvider> = new Map();
 
   constructor() {
-    // Register Real Physical Providers (Zero-Mock Production Path)
-    this.registerPhysical(new OsmOverpassProvider());
-    this.registerPhysical(new GooglePlacesProvider());
-    this.registerPhysical(new YelpFusionProvider());
-    this.registerPhysical(new FoursquarePlacesProvider());
+    // 1. Register Physical Lead Providers
+    const osm = new OsmOverpassProvider();
+    const google = new GooglePlacesProvider();
+    const yelp = new YelpFusionProvider();
+    const foursquare = new FoursquarePlacesProvider();
 
-    // Register Real Online Job Providers (Zero-Mock Production Path)
-    this.registerOnline(new RemotiveJobProvider());
-    this.registerOnline(new ArbeitnowJobProvider());
-    this.registerOnline(new HimalayasJobProvider());
-    this.registerOnline(new WeWorkRemotelyJobProvider());
-    this.registerOnline(new JobspressoJobProvider());
-    this.registerOnline(new RemoteOkJobProvider());
-    this.registerOnline(new AfricaJobsProvider());
+    this.registerPhysical(osm);
+    this.registerPhysical(google);
+    this.registerPhysical(yelp);
+    this.registerPhysical(foursquare);
+
+    // 2. Register Online Job Providers (Zero-Mock Production Path)
+    const remotive = new RemotiveJobProvider();
+    const arbeitnow = new ArbeitnowJobProvider();
+    const himalayas = new HimalayasJobProvider();
+    const weworkremotely = new WeWorkRemotelyJobProvider();
+    const jobspresso = new JobspressoJobProvider();
+    const remoteok = new RemoteOkJobProvider();
+    const africa = new AfricaJobsProvider();
+    const adzuna = new AdzunaJobProvider();
+    const jooble = new JoobleJobProvider();
+    const usajobs = new UsaJobsProvider();
+    const ats = new AtsJobProvider();
+    const aiPlatforms = new AiPlatformsProvider();
+    const jobicy = new JobicyJobProvider();
+    const themuse = new TheMuseJobProvider();
+
+    this.registerOnline(remotive);
+    this.registerOnline(arbeitnow);
+    this.registerOnline(himalayas);
+    this.registerOnline(weworkremotely);
+    this.registerOnline(jobspresso);
+    this.registerOnline(remoteok);
+    this.registerOnline(africa);
+    this.registerOnline(adzuna);
+    this.registerOnline(jooble);
+    this.registerOnline(usajobs);
+    this.registerOnline(ats);
+    this.registerOnline(aiPlatforms);
+    this.registerOnline(jobicy);
+    this.registerOnline(themuse);
   }
 
   registerPhysical(provider: IPhysicalLeadProvider) {
     this.physicalProviders.set(provider.providerKey, provider);
+    healthMonitor.registerProvider(
+      provider.providerKey,
+      provider.name,
+      "physical",
+      provider.isConfigured()
+    );
   }
 
   registerOnline(provider: IOnlineJobProvider) {
     this.onlineProviders.set(provider.providerKey, provider);
+    healthMonitor.registerProvider(
+      provider.providerKey,
+      provider.name,
+      "online",
+      provider.isConfigured()
+    );
   }
 
   getPhysicalProvidersStatus() {
@@ -91,14 +139,14 @@ export class LeadProviderAggregator {
   getOnlineProvidersStatus() {
     return [
       {
-        key: "remotive",
-        name: "Remotive Public API (Free Worldwide)",
+        key: "ai_platforms",
+        name: "AI Training & Annotation Platforms (11 Verified Sources)",
         configured: true,
         isFree: true,
       },
       {
-        key: "arbeitnow",
-        name: "Arbeitnow Job Board API (Free)",
+        key: "ats",
+        name: "Direct Employer ATS (Greenhouse/Lever/Ashby)",
         configured: true,
         isFree: true,
       },
@@ -115,8 +163,20 @@ export class LeadProviderAggregator {
         isFree: true,
       },
       {
-        key: "jobspresso",
-        name: "Jobspresso Remote Feed (Free)",
+        key: "remotive",
+        name: "Remotive Public API (Free Worldwide)",
+        configured: true,
+        isFree: true,
+      },
+      {
+        key: "arbeitnow",
+        name: "Arbeitnow Job Board API (Free)",
+        configured: true,
+        isFree: true,
+      },
+      {
+        key: "africa",
+        name: "Africa & Kenya Remote Discovery (Free)",
         configured: true,
         isFree: true,
       },
@@ -127,10 +187,40 @@ export class LeadProviderAggregator {
         isFree: true,
       },
       {
-        key: "africa",
-        name: "Africa & Kenya Remote Discovery (Free)",
+        key: "jobspresso",
+        name: "Jobspresso Remote Feed (Free)",
         configured: true,
         isFree: true,
+      },
+      {
+        key: "jobicy",
+        name: "Jobicy Remote Jobs API (Free Worldwide)",
+        configured: true,
+        isFree: true,
+      },
+      {
+        key: "themuse",
+        name: "The Muse Jobs API (Curated Opportunities)",
+        configured: true,
+        isFree: true,
+      },
+      {
+        key: "adzuna",
+        name: "Adzuna Global Job Search API",
+        configured: this.onlineProviders.get("adzuna")?.isConfigured() || false,
+        isFree: false,
+      },
+      {
+        key: "jooble",
+        name: "Jooble Search API",
+        configured: this.onlineProviders.get("jooble")?.isConfigured() || false,
+        isFree: false,
+      },
+      {
+        key: "usajobs",
+        name: "USAJobs Official Search API",
+        configured: this.onlineProviders.get("usajobs")?.isConfigured() || false,
+        isFree: false,
       },
     ];
   }
@@ -141,13 +231,12 @@ export class LeadProviderAggregator {
       ? `phys:${params.country}:${params.city || ""}:${params.niche}:${industryKey}:${params.provider || "all"}:${params.radius || 25}:${params.maxResults || 50}`
       : `online:${params.query}:${params.category || "all"}:${params.country || ""}:${industryKey}:${params.provider || "all"}:${params.maxResults || 50}`;
 
-    // 1. Check in-memory cache
+    // 1. Two-Tier Durable Cache Lookup
     if (!params.forceRefresh) {
-      const cached = memoryCache.get(cacheKey);
-      if (cached && cached.expiresAt > Date.now()) {
-        console.log(`[Cache Hit] Returning cached results for: ${cacheKey}`);
+      const cached = await durableCache.get<SearchResult>(cacheKey);
+      if (cached) {
         return {
-          ...cached.data,
+          ...cached,
           fromCache: true,
         };
       }
@@ -161,6 +250,8 @@ export class LeadProviderAggregator {
   }
 
   private async searchPhysical(params: PhysicalSearchParams, cacheKey: string): Promise<SearchResult> {
+    const startTime = Date.now();
+    const intent = parseSearchIntent(params.niche);
     const normalized = normalizePhysicalSearchQuery(params);
     const selected = params.provider || "all";
     const targets: IPhysicalLeadProvider[] = [];
@@ -187,14 +278,18 @@ export class LeadProviderAggregator {
     const sourcesQueried: string[] = [];
     const failedSources: string[] = [];
 
-    // Parallel fetch from all target providers with timeout & Promise.allSettled
+    // Parallel fetch with health tracking & timeout
     const promises = targets.map(async (t) => {
       sourcesQueried.push(t.name);
+      const reqStart = Date.now();
       try {
         const res = await t.search(params);
+        healthMonitor.recordSuccess(t.providerKey, Date.now() - reqStart, res.length);
         return res;
       } catch (err) {
-        console.warn(`[PhysicalProvider] ${t.name} failed:`, err);
+        const latency = Date.now() - reqStart;
+        console.warn(`[PhysicalProvider] ${t.name} failed (${latency}ms):`, err);
+        healthMonitor.recordFailure(t.providerKey, latency, err as Error);
         failedSources.push(t.name);
         return [] as PhysicalLead[];
       }
@@ -209,12 +304,12 @@ export class LeadProviderAggregator {
       }
     }
 
-    // Deduplicate via multi-tier deduplicator
-    const deduplicated = deduplicatePhysicalLeads(rawLeads);
+    // Entity Resolution & Contact Fusion across multi-source candidates
+    const resolvedLeads = resolvePhysicalEntities(rawLeads);
 
-    // Apply Deterministic Relevance Scoring & Filtering
+    // Deterministic Relevance Scoring & Filtering
     const scoredLeads: PhysicalLead[] = [];
-    for (const lead of deduplicated) {
+    for (const lead of resolvedLeads) {
       const relevance = scorePhysicalLeadRelevance(lead, normalized.matchedIndustries, params.niche);
       if (relevance.isRelevant) {
         scoredLeads.push({
@@ -231,15 +326,24 @@ export class LeadProviderAggregator {
       return (b.dataQualityScore || 0) - (a.dataQualityScore || 0);
     });
 
-    // Fast asynchronous contact enrichment for legitimate contact discovery
+    // Contact Enrichment & Verification Engine
     const finalLeads = await enrichLeadsBatch(scoredLeads, { forceRefresh: params.forceRefresh }) as PhysicalLead[];
-
     const displayQuery = normalized.primaryIndustry ? normalized.primaryIndustry.name : params.niche;
+    const locationStr = [params.city, params.country].filter(Boolean).join(", ");
+    const executionTimeMs = Date.now() - startTime;
+
+    const diagnostics: SearchDiagnostics = {
+      totalProvidersQueried: sourcesQueried.length,
+      successfulProviders: sourcesQueried.length - failedSources.length,
+      failedProviders: failedSources.length,
+      executionTimeMs,
+      cached: false,
+    };
 
     const searchResult: SearchResult = {
       mode: "physical",
       query: displayQuery,
-      location: [params.city, params.country].filter(Boolean).join(", "),
+      location: locationStr,
       provider: selected,
       totalFetched: rawLeads.length,
       qualifiedCount: finalLeads.length,
@@ -247,15 +351,18 @@ export class LeadProviderAggregator {
       sourcesQueried,
       failedSources,
       leads: finalLeads,
+      diagnostics,
     };
 
-    // Cache for 1 hour
-    memoryCache.set(cacheKey, { data: searchResult, expiresAt: Date.now() + 3600 * 1000 });
+    // Store in Durable Cache (TTL: 1 hour)
+    await durableCache.set(cacheKey, selected, displayQuery, locationStr, searchResult, 3600);
 
     return searchResult;
   }
 
   private async searchOnline(params: OnlineSearchParams, cacheKey: string): Promise<SearchResult> {
+    const startTime = Date.now();
+    const intent = parseSearchIntent(params.query);
     const normalized = normalizeOnlineSearchQuery(params);
     const selected = params.provider || "all";
     const targets: IOnlineJobProvider[] = [];
@@ -268,8 +375,11 @@ export class LeadProviderAggregator {
       }
     } else {
       const p = this.onlineProviders.get(selected);
-      if (p) targets.push(p);
-      else targets.push(this.onlineProviders.get("remotive")!);
+      if (p && p.isConfigured()) {
+        targets.push(p);
+      } else {
+        targets.push(this.onlineProviders.get("remotive")!);
+      }
     }
 
     if (targets.length === 0) {
@@ -278,16 +388,60 @@ export class LeadProviderAggregator {
 
     const sourcesQueried: string[] = [];
     const failedSources: string[] = [];
+    const providerExecutions: ProviderExecutionResult[] = [];
 
-    // Parallel fetch from all job providers with Promise.allSettled
+    // Parallel fetch from all configured job providers with unified execution envelope
     const promises = targets.map(async (t) => {
       sourcesQueried.push(t.name);
+      const reqStart = Date.now();
       try {
-        const res = await t.fetchJobs(params);
-        return res;
-      } catch (err) {
-        console.warn(`[OnlineJobProvider] ${t.name} failed:`, err);
+        let execResult: ProviderExecutionResult;
+        if (typeof t.execute === "function") {
+          execResult = await t.execute(params);
+        } else {
+          const jobs = await t.fetchJobs(params);
+          execResult = {
+            providerKey: t.providerKey,
+            providerName: t.name,
+            status: "success",
+            fetchedCount: jobs.length,
+            normalizedCount: jobs.length,
+            filteredCount: jobs.length,
+            finalCount: jobs.length,
+            latencyMs: Date.now() - reqStart,
+            fromCache: false,
+            staleCache: false,
+            jobs,
+          };
+        }
+        healthMonitor.recordExecution(execResult);
+        providerExecutions.push(execResult);
+
+        if (execResult.status === "unavailable" || execResult.status === "schema_error") {
+          failedSources.push(t.name);
+        }
+
+        return execResult.jobs;
+      } catch (err: any) {
+        const latency = Date.now() - reqStart;
+        console.warn(`[OnlineJobProvider] ${t.name} failed (${latency}ms):`, err);
+        const failResult: ProviderExecutionResult = {
+          providerKey: t.providerKey,
+          providerName: t.name,
+          status: "unavailable",
+          fetchedCount: 0,
+          normalizedCount: 0,
+          filteredCount: 0,
+          finalCount: 0,
+          latencyMs: latency,
+          errorMessage: err?.message || String(err),
+          fromCache: false,
+          staleCache: false,
+          jobs: [],
+        };
+        healthMonitor.recordExecution(failResult);
         failedSources.push(t.name);
+        providerExecutions.push(failResult);
         return [] as OnlineJobLead[];
       }
     });
@@ -301,10 +455,23 @@ export class LeadProviderAggregator {
       }
     }
 
-    // Deduplicate jobs by company + title similarity & canonical URL
+    // Output structured Development Matrix Diagnostic Log
+    console.log(`\n================== [ONLINE RADAR PROVIDER DIAGNOSTICS] ==================`);
+    console.log(`Query: "${params.query || "all"}" | Total Providers: ${targets.length} | Raw Leads: ${rawJobs.length}`);
+    console.log(`ProviderKey    | Status        | Fetched | Normalized | Final | Latency | Cache`);
+    console.log(`---------------|---------------|---------|------------|-------|---------|------`);
+    for (const exec of providerExecutions) {
+      const cacheTag = exec.staleCache ? "STALE" : exec.fromCache ? "HIT" : "LIVE";
+      console.log(
+        `${exec.providerKey.padEnd(14)} | ${exec.status.toUpperCase().padEnd(13)} | ${String(exec.fetchedCount).padStart(7)} | ${String(exec.normalizedCount).padStart(10)} | ${String(exec.finalCount).padStart(5)} | ${String(exec.latencyMs).padStart(5)}ms | ${cacheTag}`
+      );
+    }
+    console.log(`=========================================================================\n`);
+
+    // Deduplicate jobs by company + title similarity & canonical URL with multi-source attribution
     const deduplicated = deduplicateOnlineJobs(rawJobs);
 
-    // Apply Deterministic Relevance Scoring & Filtering
+    // Apply Multi-Factor Relevance Scoring & Filtering
     const scoredJobs: OnlineJobLead[] = [];
     for (const job of deduplicated) {
       const relevance = scoreOnlineJobRelevance(job, normalized.matchedIndustries, params.query);
@@ -316,7 +483,7 @@ export class LeadProviderAggregator {
       }
     }
 
-    // Sort by relevance score descending
+    // Sort by multi-factor score descending
     scoredJobs.sort((a, b) => {
       const scoreDiff = (b.relevanceScore || 0) - (a.relevanceScore || 0);
       if (Math.abs(scoreDiff) > 0.05) return scoreDiff;
@@ -325,6 +492,29 @@ export class LeadProviderAggregator {
 
     const finalJobs = await enrichLeadsBatch(scoredJobs, { forceRefresh: params.forceRefresh }) as OnlineJobLead[];
     const displayQuery = normalized.primaryIndustry ? normalized.primaryIndustry.name : params.query;
+    const executionTimeMs = Date.now() - startTime;
+
+    const diagnostics: SearchDiagnostics = {
+      totalProvidersQueried: sourcesQueried.length,
+      successfulProviders: sourcesQueried.length - failedSources.length,
+      failedProviders: failedSources.length,
+      sourcesQueried,
+      sourcesFailed: failedSources,
+      sourcesSucceeded: sourcesQueried.filter((s) => !failedSources.includes(s)),
+      executionTimeMs,
+      cached: false,
+      providerExecutions: providerExecutions.map((e) => ({
+        providerKey: e.providerKey,
+        providerName: e.providerName,
+        status: e.status,
+        fetchedCount: e.fetchedCount,
+        finalCount: e.finalCount,
+        latencyMs: e.latencyMs,
+        fromCache: e.fromCache,
+        staleCache: e.staleCache,
+        errorMessage: e.errorMessage,
+      })),
+    };
 
     const searchResult: SearchResult = {
       mode: "online",
@@ -337,10 +527,11 @@ export class LeadProviderAggregator {
       sourcesQueried,
       failedSources,
       leads: finalJobs,
+      diagnostics,
     };
 
-    // Cache for 1 hour
-    memoryCache.set(cacheKey, { data: searchResult, expiresAt: Date.now() + 3600 * 1000 });
+    // Store in Durable Cache (TTL: 1 hour)
+    await durableCache.set(cacheKey, selected, displayQuery, "Worldwide Remote", searchResult, 3600);
 
     return searchResult;
   }

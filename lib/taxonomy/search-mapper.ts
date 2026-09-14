@@ -83,6 +83,31 @@ export function normalizeOnlineSearchQuery(params: OnlineSearchParams): Normaliz
     const matched = matchTextToTaxonomy(rawQuery, "online");
     if (matched) {
       matchedIndustries.push(matched);
+    } else {
+      // Secondary AI query intent mapping
+      const qLower = rawQuery.toLowerCase();
+      if (qLower.includes("ai training") || qLower.includes("rlhf") || qLower.includes("response evaluation")) {
+        const ind = getIndustriesByIds(["ai_training_feedback"]);
+        if (ind.length > 0) matchedIndustries.push(ind[0]);
+      } else if (qLower.includes("data annotation") || qLower.includes("labeling") || qLower.includes("image label")) {
+        const ind = getIndustriesByIds(["ai_data_annotation"]);
+        if (ind.length > 0) matchedIndustries.push(ind[0]);
+      } else if (qLower.includes("search rater") || qLower.includes("search quality") || qLower.includes("search evaluation")) {
+        const ind = getIndustriesByIds(["search_evaluation_raters"]);
+        if (ind.length > 0) matchedIndustries.push(ind[0]);
+      } else if (qLower.includes("ai coding") || qLower.includes("code review") || qLower.includes("code evaluation")) {
+        const ind = getIndustriesByIds(["ai_coding_evaluation"]);
+        if (ind.length > 0) matchedIndustries.push(ind[0]);
+      } else if (qLower.includes("math") || qLower.includes("reasoning")) {
+        const ind = getIndustriesByIds(["ai_math_reasoning"]);
+        if (ind.length > 0) matchedIndustries.push(ind[0]);
+      } else if (qLower.includes("ai safety") || qLower.includes("red team") || qLower.includes("model safety")) {
+        const ind = getIndustriesByIds(["ai_safety_quality"]);
+        if (ind.length > 0) matchedIndustries.push(ind[0]);
+      } else if (qLower.includes("voice recording") || qLower.includes("speech collection")) {
+        const ind = getIndustriesByIds(["transcription_annotation"]);
+        if (ind.length > 0) matchedIndustries.push(ind[0]);
+      }
     }
   }
 

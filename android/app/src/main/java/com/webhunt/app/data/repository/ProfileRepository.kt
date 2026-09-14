@@ -44,4 +44,8 @@ class ProfileRepository(private val api: WebHuntApiService) {
             Result.failure(Exception(msg, e))
         }
     }
+
+    fun clear() {
+        _profile.value = UserProfileData()
+    }
 }

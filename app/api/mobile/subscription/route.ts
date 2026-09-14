@@ -10,9 +10,16 @@ export async function GET() {
     const session = await getCurrentSession();
     const subData = session?.userId ? await getUserSubscriptionAction() : null;
 
+    const plans = plansData.plans.map((p) => ({
+      ...p,
+      amountUsd: p.priceUsd,
+      amountKes: p.priceKes,
+      description: p.tagline,
+    }));
+
     return NextResponse.json({
       success: true,
-      plans: plansData.plans,
+      plans,
       subscription: subData?.subscriptionStatus || {
         hasActiveSubscription: false,
         isAdmin: false,

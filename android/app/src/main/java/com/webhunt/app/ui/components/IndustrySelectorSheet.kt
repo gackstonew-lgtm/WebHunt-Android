@@ -258,6 +258,54 @@ fun IndustrySelectorSheet(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                if (searchQuery.isNotBlank()) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(WebHuntHover)
+                                .border(1.dp, WebHuntRoyal, RoundedCornerShape(12.dp))
+                                .clickable {
+                                    val customInd = IndustryDefinition(
+                                        id = "custom_" + searchQuery.trim().lowercase().replace(Regex("[^a-z0-9]"), "_"),
+                                        name = searchQuery.trim(),
+                                        categoryId = "custom",
+                                        applicableModes = listOf(mode)
+                                    )
+                                    onSelectIndustry(customInd)
+                                    onDismiss()
+                                }
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search",
+                                    tint = WebHuntRoyal,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "Search for: \"${searchQuery.trim()}\"",
+                                        color = WebHuntPaper,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                    Text(
+                                        text = "Execute custom tokenized radar query",
+                                        color = WebHuntEmerald,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 items(displayList) { ind ->
                     val isSelected = selectedIndustryIds.contains(ind.id)
 

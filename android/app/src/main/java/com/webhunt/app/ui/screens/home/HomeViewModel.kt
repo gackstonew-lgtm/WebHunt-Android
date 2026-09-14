@@ -129,36 +129,46 @@ class HomeViewModel(
         }
 
         viewModelScope.launch {
-            val result = searchRepo.executeSearch(request)
-            result.onSuccess { data ->
+            try {
+                val result = searchRepo.executeSearch(request)
+                result.onSuccess { data ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        searchResult = data
+                    )
+                    val queryText = if (current.mode == "physical") current.niche else current.onlineQuery
+                    val locationText = if (current.mode == "physical") {
+                        if (current.city.isNotBlank()) "${current.city}, ${current.country}" else current.country
+                    } else "Remote / Global"
+                    val yieldCount = if (data.mode == "physical") data.physicalLeads.size else data.onlineLeads.size
+
+                    historyManager?.logSearch(
+                        mode = current.mode,
+                        query = queryText,
+                        location = locationText,
+                        provider = data.provider.ifBlank { if (current.mode == "physical") "osm" else "aggregator" },
+                        totalFetched = yieldCount,
+                        qualifiedCount = yieldCount
+                    )
+                }.onFailure { error ->
+                    val msg = error.message ?: "Failed to execute lead scan"
+                    val isAuth = msg.contains("Authentication required", ignoreCase = true)
+                    val isSub = msg.contains("subscription", ignoreCase = true)
+
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = msg,
+                        authRequired = isAuth,
+                        subscriptionRequired = isSub
+                    )
+                }
+            } catch (cancellation: kotlinx.coroutines.CancellationException) {
+                throw cancellation
+            } catch (t: Throwable) {
+                android.util.Log.e("HomeViewModel", "Unexpected failure during lead radar scan", t)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    searchResult = data
-                )
-                val queryText = if (current.mode == "physical") current.niche else current.onlineQuery
-                val locationText = if (current.mode == "physical") {
-                    if (current.city.isNotBlank()) "${current.city}, ${current.country}" else current.country
-                } else "Remote / Global"
-                val yieldCount = if (data.mode == "physical") data.physicalLeads.size else data.onlineLeads.size
-
-                historyManager?.logSearch(
-                    mode = current.mode,
-                    query = queryText,
-                    location = locationText,
-                    provider = data.provider ?: if (current.mode == "physical") "serper" else "jsearch",
-                    totalFetched = yieldCount,
-                    qualifiedCount = yieldCount
-                )
-            }.onFailure { error ->
-                val msg = error.message ?: "Failed to execute lead scan"
-                val isAuth = msg.contains("Authentication required", ignoreCase = true)
-                val isSub = msg.contains("subscription", ignoreCase = true)
-
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = msg,
-                    authRequired = isAuth,
-                    subscriptionRequired = isSub
+                    errorMessage = t.message ?: "An unexpected error occurred during scan"
                 )
             }
         }

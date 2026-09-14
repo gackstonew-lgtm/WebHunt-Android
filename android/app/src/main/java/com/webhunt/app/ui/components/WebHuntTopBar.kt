@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Person
@@ -37,6 +38,7 @@ fun WebHuntTopBar(
     onAuthClick: () -> Unit,
     onProfileClick: () -> Unit,
     onUpgradeClick: () -> Unit,
+    onBackClick: (() -> Unit)? = null,
     onExportClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -54,21 +56,40 @@ fun WebHuntTopBar(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Brand Logo Box
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(colors.cardElevated)
-                    .border(1.dp, colors.border, RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Radar,
-                    contentDescription = "WebHunt Radar",
-                    tint = colors.primaryText,
-                    modifier = Modifier.size(18.dp)
-                )
+            if (onBackClick != null) {
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(colors.cardElevated)
+                        .border(1.dp, colors.border, RoundedCornerShape(10.dp))
+                        .clickable { onBackClick() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = colors.primaryText,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            } else {
+                // Brand Logo Box
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(colors.cardElevated)
+                        .border(1.dp, colors.border, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Radar,
+                        contentDescription = "WebHunt Radar",
+                        tint = colors.primaryText,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(9.dp))

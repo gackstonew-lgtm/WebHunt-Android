@@ -1,5 +1,7 @@
 package com.webhunt.app.ui.theme
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 
 // ==========================================
@@ -40,12 +42,43 @@ val WebHuntRoyalHover = Color(0xFF00388A)
 val WebHuntRoyalTint = Color(0x330048BB)
 val WebHuntBlueBadge = Color(0xFF10192A)
 
-// --- Backward Compatibility Aliases (Defaulting to Dark Tokens) ---
-val WebHuntBlack = ArcadeObsidian
-val WebHuntCard = ArcadeDarkSurface
-val WebHuntSurface = ArcadeInputInset
-val WebHuntHover = ArcadeElevated
-val WebHuntBorder = ArcadeBorderDark
-val WebHuntBorderSubtle = ArcadeBorderSubtleDark
-val WebHuntPaper = ArcadePlatinum
-val WebHuntMuted = ArcadeMutedSilver
+// --- Dynamic Theme Aliases (Reflecting Current Active Theme Dynamically) ---
+val WebHuntBlack: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = WebHuntTheme.colors.background
+
+val WebHuntCard: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = WebHuntTheme.colors.card
+
+val WebHuntSurface: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = WebHuntTheme.colors.inputInset
+
+val WebHuntHover: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = WebHuntTheme.colors.cardElevated
+
+val WebHuntBorder: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = WebHuntTheme.colors.border
+
+val WebHuntBorderSubtle: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = WebHuntTheme.colors.borderSubtle
+
+val WebHuntPaper: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = WebHuntTheme.colors.primaryText
+
+val WebHuntMuted: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = WebHuntTheme.colors.mutedText

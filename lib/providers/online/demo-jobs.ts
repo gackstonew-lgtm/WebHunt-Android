@@ -1,4 +1,4 @@
-import { IOnlineJobProvider } from "./types";
+import { IOnlineJobProvider, ProviderExecutionResult } from "./types";
 import { OnlineJobLead, OnlineSearchParams } from "@/lib/types";
 
 /**
@@ -13,8 +13,24 @@ export class DemoOnlineJobProvider implements IOnlineJobProvider {
     return false; // Decommissioned in production
   }
 
+  async execute(params: OnlineSearchParams): Promise<ProviderExecutionResult> {
+    return {
+      providerKey: this.providerKey,
+      providerName: this.name,
+      status: "disabled",
+      fetchedCount: 0,
+      normalizedCount: 0,
+      filteredCount: 0,
+      finalCount: 0,
+      latencyMs: 0,
+      errorMessage: "Demo provider is decommissioned in production",
+      fromCache: false,
+      staleCache: false,
+      jobs: [],
+    };
+  }
+
   async fetchJobs(params: OnlineSearchParams): Promise<OnlineJobLead[]> {
-    console.warn("[DemoOnlineJobProvider] Demo provider is decommissioned. Real data providers are active.");
     return [];
   }
 }
